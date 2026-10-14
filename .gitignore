@@ -1,0 +1,133 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+medbot-env/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+medbot-v*/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+*.pid
+
+# Flask sessions
+flask_sessions/
+flask-session/
+
+# Environment variables
+.env
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows executables
+*.exe
+*.msi
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Medical data cache
+medical_cache/
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Models and large files
+*.bin
+*.model
+*.pkl
+*.joblib
+
+# Redis dumps
+dump.rdb
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Research and test files
+test_env/
+research_innovations/
+
+# Output files
+output.log
+nul
+
+# AI tool configuration
+.claude/
+.cursor/
+.aider/
+.continue/
+.kiro/
+
+# Editor-specific AI configs
+*.ai_context
+
+# Release artifacts
+docs/RELEASE_REPORT.md
+
+# Large medical data files
+data/*.pdf
+
+# Screenshot helper scripts (not for production)
+screenshot_server.py
+take_screenshots.py
