@@ -178,13 +178,13 @@ class AdvancedHealthChecker:
         print("\n📦 Dependencies Check...")
         
         critical_deps = [
-            'flask', 'flask_cors', 'flask_limiter', 'flask_caching',
-            'requests', 'redis', 'supabase', 'openai', 'transformers',
+            'fastapi', 'uvicorn', 'starlette',
+            'requests', 'redis', 'supabase', 'groq', 'transformers',
             'torch', 'langchain', 'psutil', 'dotenv'
         ]
         
         optional_deps = [
-            'nltk', 'spacy', 'pinecone', 'gunicorn', 'eventlet'
+            'nltk', 'spacy', 'pinecone', 'gunicorn', 'flask_cors'
         ]
         
         missing_critical = []
@@ -197,15 +197,6 @@ class AdvancedHealthChecker:
                 if dep == 'dotenv':
                     import dotenv
                     module = dotenv
-                elif dep == 'flask_cors':
-                    import flask_cors
-                    module = flask_cors
-                elif dep == 'flask_limiter':
-                    import flask_limiter
-                    module = flask_limiter
-                elif dep == 'flask_caching':
-                    import flask_caching
-                    module = flask_caching
                 else:
                     module = __import__(dep)
                 

@@ -10,9 +10,9 @@ uvicorn[standard]==0.32.1
 gunicorn==23.0.0
 starlette==0.41.3
 
-# ---- Flask (used in several compatibility layers and blueprints) ----
-flask==3.1.0
-flask-cors==5.0.0
+# ---- Flask (removed — codebase is now fully FastAPI) ----
+# flask==3.1.0
+# flask-cors==5.0.0
 
 # ---- Data Validation ----
 pydantic==2.10.2

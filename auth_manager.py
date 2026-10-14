@@ -45,11 +45,15 @@ except ImportError as e:
 # Other imports
 try:
     import requests
-    from flask import session, request
     from dotenv import load_dotenv
 except ImportError as e:
     print(f"❌ Missing required library: {e}")
-    print("Run: pip install requests flask python-dotenv")
+    print("Run: pip install requests python-dotenv")
+
+# Flask session/request are not used in this module — session data is passed
+# explicitly as arguments or read from FastAPI cookie-based sessions upstream.
+session = None
+request = None
     sys.exit(1)
 
 # Configure logging

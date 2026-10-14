@@ -787,114 +787,136 @@ class SystemMonitor:
             return {}
 
 # Flask Blueprint for Admin Panel
-def create_admin_blueprint():
-    """Create Flask blueprint for admin panel"""
-    from flask import Blueprint, render_template, request, jsonify
+def create_admin_router():
+    """Create FastAPI APIRouter for the admin panel book management routes."""
     from dataclasses import asdict
     import logging
-    
-    admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+    from fastapi import APIRouter, Request, UploadFile, File
+    from fastapi.responses import JSONResponse
+    from fastapi.templating import Jinja2Templates
+
+    admin_router = APIRouter(prefix="/admin", tags=["admin-books"])
     book_manager = RealTimeBookManager()
     logger = logging.getLogger(__name__)
-    
-    @admin_bp.route('/dashboard')
-    def dashboard():
-        """Admin dashboard"""
+    templates = Jinja2Templates(directory="templates")
+
+    @admin_router.get("/dashboard")
+    async def dashboard(request: Request):
+        """Admin dashboard."""
+        if request.cookies.get("is_admin") != "true":
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url="/admin/login", status_code=302)
         try:
             books_status = book_manager.get_all_books_status()
             system_status = book_manager.get_system_status()
-            
-            return render_template('admin_dashboard.html', 
-                                 books=books_status,
-                                 system_status=asdict(system_status))
+            return templates.TemplateResponse(
+                "admin_dashboard.html",
+                {
+                    "request": request,
+                    "books": books_status,
+                    "system_status": asdict(system_status),
+                },
+            )
         except Exception as e:
             logger.error(f"Dashboard error: {e}")
-            return jsonify({"error": str(e)}), 500
-    
-    @admin_bp.route('/api/books')
-    def get_books():
-        """API: Get all books status"""
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+    @admin_router.get("/api/books")
+    async def get_books(request: Request):
+        """API: Get all books status."""
+        if request.cookies.get("is_admin") != "true":
+            return JSONResponse({"error": "Admin access required"}, status_code=403)
         try:
             books_status = book_manager.get_all_books_status()
-            return jsonify([asdict(book) for book in books_status])
+            return JSONResponse([asdict(book) for book in books_status])
         except Exception as e:
             logger.error(f"Get books error: {e}")
-            return jsonify({"error": str(e)}), 500
-    
-    @admin_bp.route('/api/upload', methods=['POST'])
-    def upload_book():
-        """API: Upload new book"""
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+    @admin_router.post("/api/upload")
+    async def upload_book(request: Request, file: UploadFile = File(...)):
+        """API: Upload new book."""
+        if request.cookies.get("is_admin") != "true":
+            return JSONResponse({"error": "Admin access required"}, status_code=403)
         try:
-            if 'file' not in request.files:
-                return jsonify({"success": False, "error": "No file provided"}), 400
-            
-            file = request.files['file']
-            if file.filename == '':
-                return jsonify({"success": False, "error": "No file selected"}), 400
-            
-            result = book_manager.upload_book(file.read(), file.filename)
-            return jsonify(result)
-            
+            if not file.filename:
+                return JSONResponse({"success": False, "error": "No file selected"}, status_code=400)
+            contents = await file.read()
+            result = book_manager.upload_book(contents, file.filename)
+            return JSONResponse(result)
         except Exception as e:
             logger.error(f"Upload API error: {e}")
-            return jsonify({"success": False, "error": str(e)}), 500
-    
-    @admin_bp.route('/api/delete/<filename>', methods=['DELETE'])
-    def delete_book(filename):
-        """API: Delete book"""
+            return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+    @admin_router.delete("/api/delete/{filename}")
+    async def delete_book(filename: str, request: Request):
+        """API: Delete book."""
+        if request.cookies.get("is_admin") != "true":
+            return JSONResponse({"error": "Admin access required"}, status_code=403)
         try:
             result = book_manager.delete_book(filename)
-            return jsonify(result)
+            return JSONResponse(result)
         except Exception as e:
             logger.error(f"Delete API error: {e}")
-            return jsonify({"success": False, "error": str(e)}), 500
-    
-    @admin_bp.route('/api/index', methods=['POST'])
-    def start_indexing():
-        """API: Start indexing"""
+            return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+    @admin_router.post("/api/index")
+    async def start_indexing(request: Request):
+        """API: Start indexing."""
+        if request.cookies.get("is_admin") != "true":
+            return JSONResponse({"error": "Admin access required"}, status_code=403)
         try:
-            data = request.get_json() or {}
-            selected_books = data.get('books', [])
-            mode = data.get('mode', 'ultra')
-            
+            data = await request.json()
+            selected_books = data.get("books", [])
+            mode = data.get("mode", "ultra")
             result = book_manager.start_indexing(selected_books, mode)
-            return jsonify(result)
-            
+            return JSONResponse(result)
         except Exception as e:
             logger.error(f"Start indexing API error: {e}")
-            return jsonify({"success": False, "error": str(e)}), 500
-    
-    @admin_bp.route('/api/index/stop', methods=['POST'])
-    def stop_indexing():
-        """API: Stop indexing"""
+            return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+    @admin_router.post("/api/index/stop")
+    async def stop_indexing(request: Request):
+        """API: Stop indexing."""
+        if request.cookies.get("is_admin") != "true":
+            return JSONResponse({"error": "Admin access required"}, status_code=403)
         try:
             result = book_manager.stop_indexing()
-            return jsonify(result)
+            return JSONResponse(result)
         except Exception as e:
             logger.error(f"Stop indexing API error: {e}")
-            return jsonify({"success": False, "error": str(e)}), 500
-    
-    @admin_bp.route('/api/status')
-    def get_status():
-        """API: Get system status"""
+            return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+    @admin_router.get("/api/status")
+    async def get_status(request: Request):
+        """API: Get system status."""
+        if request.cookies.get("is_admin") != "true":
+            return JSONResponse({"error": "Admin access required"}, status_code=403)
         try:
             status = book_manager.get_system_status()
-            return jsonify(asdict(status))
+            return JSONResponse(asdict(status))
         except Exception as e:
             logger.error(f"Status API error: {e}")
-            return jsonify({"error": str(e)}), 500
-    
-    @admin_bp.route('/api/system/resources')
-    def get_system_resources():
-        """API: Get system resources"""
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+    @admin_router.get("/api/system/resources")
+    async def get_system_resources(request: Request):
+        """API: Get system resources."""
+        if request.cookies.get("is_admin") != "true":
+            return JSONResponse({"error": "Admin access required"}, status_code=403)
         try:
             resources = book_manager.system_monitor.get_current_resources()
-            return jsonify(resources)
+            return JSONResponse(resources)
         except Exception as e:
             logger.error(f"Resources API error: {e}")
-            return jsonify({"error": str(e)}), 500
-    
-    return admin_bp
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+    return admin_router
+
+
+# Backward-compatible alias — existing callers of create_admin_blueprint() will
+# get an APIRouter instead of a Flask Blueprint without changing their import.
+create_admin_blueprint = create_admin_router
 
 # Enhanced Admin Dashboard Template (to be saved as admin_dashboard.html)
 ADMIN_DASHBOARD_HTML = '''

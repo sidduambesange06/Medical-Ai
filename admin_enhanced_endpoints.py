@@ -1,67 +1,82 @@
+"""
+Enhanced Admin Dashboard Endpoints
+===================================
+FastAPI APIRouter providing real-time system metrics and file listing for the admin panel.
+Replaces the previous Flask Blueprint implementation.
+"""
 
-# Enhanced Admin Dashboard Endpoints Fix
-from flask import Blueprint, request, jsonify, session, redirect, url_for, render_template_string
-import psutil
-import json
 import os
 from datetime import datetime
 
-admin_bp = Blueprint('admin_enhanced', __name__, url_prefix='/admin')
+import psutil
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 
-# Enhanced metrics endpoint
-@admin_bp.route('/api/metrics/enhanced', methods=['GET'])
-def enhanced_metrics():
+router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def _test_redis() -> bool:
+    """Return True if a local Redis instance is reachable."""
     try:
-        # System metrics
+        import redis
+        r = redis.Redis(host="localhost", port=6379, socket_connect_timeout=1)
+        r.ping()
+        return True
+    except Exception:
+        return False
+
+
+@router.get("/api/metrics/enhanced")
+async def enhanced_metrics(request: Request):
+    """Return real-time system and cache metrics."""
+    # Guard: only admins may call this endpoint
+    if request.cookies.get("is_admin") != "true":
+        return JSONResponse({"error": "Admin access required"}, status_code=403)
+
+    try:
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
-        
-        # File system metrics
-        data_dir = os.path.join(os.getcwd(), 'data')
+        disk = psutil.disk_usage("/")
+
+        data_dir = os.path.join(os.getcwd(), "data")
         file_count = len(os.listdir(data_dir)) if os.path.exists(data_dir) else 0
-        
+
         metrics = {
             "system": {
                 "cpu_percent": cpu_percent,
                 "memory_percent": memory.percent,
-                "memory_available_gb": round(memory.available / (1024**3), 2),
+                "memory_available_gb": round(memory.available / (1024 ** 3), 2),
                 "disk_percent": disk.percent,
-                "disk_free_gb": round(disk.free / (1024**3), 2)
+                "disk_free_gb": round(disk.free / (1024 ** 3), 2),
             },
             "file_manager": {
                 "data_directory": data_dir,
                 "file_count": file_count,
-                "directory_exists": os.path.exists(data_dir)
+                "directory_exists": os.path.exists(data_dir),
             },
             "cache": {
-                "redis_status": "connected" if test_redis() else "disconnected",
-                "cache_enabled": True
+                "redis_status": "connected" if _test_redis() else "disconnected",
+                "cache_enabled": True,
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
-        return jsonify(metrics)
+        return JSONResponse(metrics)
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
 
-def test_redis():
-    try:
-        import redis
-        r = redis.Redis(host='localhost', port=6379)
-        r.ping()
-        return True
-    except:
-        return False
 
-# File manager endpoint
-@admin_bp.route('/api/files', methods=['GET'])
-def list_files():
+@router.get("/api/files")
+async def list_files(request: Request):
+    """List files in the data directory (admin only)."""
+    if request.cookies.get("is_admin") != "true":
+        return JSONResponse({"error": "Admin access required"}, status_code=403)
+
     try:
-        data_dir = os.path.join(os.getcwd(), 'data')
+        data_dir = os.path.join(os.getcwd(), "data")
         if not os.path.exists(data_dir):
-            return jsonify({"files": [], "message": "Data directory not found"})
-        
+            return JSONResponse({"files": [], "message": "Data directory not found"})
+
         files = []
         for filename in os.listdir(data_dir):
             filepath = os.path.join(data_dir, filename)
@@ -71,9 +86,10 @@ def list_files():
                     "name": filename,
                     "size": stat.st_size,
                     "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                    "type": os.path.splitext(filename)[1]
+                    "type": os.path.splitext(filename)[1],
                 })
-        
-        return jsonify({"files": files})
+
+        return JSONResponse({"files": files})
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse({"error": str(e)}, status_code=500)
