@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAI Pro - Processing Authentication</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .processing-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="processing-container">
+        <div class="spinner"></div>
+        <h2>Processing Authentication...</h2>
+        <p>Please wait while we complete your sign-in.</p>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://vyzzvdimsuaeknpmyggt.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5enp2ZGltc3VhZWtucG15Z2d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NzM5NzQsImV4cCI6MjA2OTM0OTk3NH0.BPnPM0fdomDXm1qVwzPlvlW4sW-WazLByAF0X8m1u94';
+        const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+        // Process OAuth callback
+        async function processOAuthCallback() {
+            try {
+                console.log('Processing OAuth callback...');
+                
+                // Get the auth session from URL fragments
+                const { data, error } = await supabaseClient.auth.getSession();
+                
+                if (error) {
+                    console.error('OAuth callback error:', error);
+                    window.location.href = '/login?error=oauth_failed';
+                    return;
+                }
+
+                if (data?.session?.user) {
+                    console.log('OAuth success - processing user data...');
+                    
+                    // Send auth data to backend
+                    const response = await fetch('/auth/callback', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user: data.session.user,
+                            session: data.session
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        console.log('Authentication successful - redirecting to chat...');
+                        window.location.href = '/chat';
+                    } else {
+                        console.error('Backend auth processing failed:', result.error);
+                        window.location.href = `/login?error=${encodeURIComponent(result.error)}`;
+                    }
+                } else {
+                    console.log('No session found - redirecting to login');
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('OAuth callback processing error:', error);
+                window.location.href = '/login?error=callback_processing_failed';
+            }
+        }
+
+        // Start processing when page loads
+        document.addEventListener('DOMContentLoaded', processOAuthCallback);
+    </script>
+</body>
+</html>

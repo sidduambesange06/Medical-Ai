@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedBot - Guest Access</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --guest-gradient: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+            --dark-bg: #0a0e1a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+        }
+
+        .guest-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: var(--shadow-glow);
+            text-align: center;
+        }
+
+        .guest-header {
+            margin-bottom: 2rem;
+        }
+
+        .guest-icon {
+            font-size: 3rem;
+            background: var(--guest-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .guest-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .guest-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .guest-form {
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .guest-btn {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background: var(--guest-gradient);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .guest-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(67, 206, 162, 0.3);
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+
+        .features {
+            text-align: left;
+            margin: 1.5rem 0;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .feature-icon {
+            color: #43cea2;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="guest-container">
+        <div class="guest-header">
+            <div class="guest-icon">
+                <i class="fas fa-user-friends"></i>
+            </div>
+            <h1 class="guest-title">Guest Access</h1>
+            <p class="guest-subtitle">Try MedBot without creating an account</p>
+        </div>
+
+        <form class="guest-form" action="/auth/guest" method="POST">
+            <div class="input-group">
+                <label class="input-label" for="name">Your Name (optional)</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="input-field" 
+                    placeholder="Enter your name or leave blank"
+                    maxlength="50"
+                >
+            </div>
+
+            <div class="features">
+                <p style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Guest Features:</p>
+                <div class="feature-item">
+                    <i class="fas fa-check feature-icon"></i>
+                    <span>Basic medical consultations</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-check feature-icon"></i>
+                    <span>General health information</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-times" style="color: #ff6b6b; margin-right: 0.5rem;"></i>
+                    <span>Session history not saved</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-times" style="color: #ff6b6b; margin-right: 0.5rem;"></i>
+                    <span>Limited to current session</span>
+                </div>
+            </div>
+
+            <button type="submit" class="guest-btn">
+                <i class="fas fa-sign-in-alt" style="margin-right: 0.5rem;"></i>
+                Continue as Guest
+            </button>
+        </form>
+
+        <a href="/login" class="back-link">
+            <i class="fas fa-arrow-left" style="margin-right: 0.3rem;"></i>
+            Back to login options
+        </a>
+    </div>
+
+    <script>
+        // Auto-focus name field if supported
+        document.addEventListener('DOMContentLoaded', function() {
+            const nameField = document.getElementById('name');
+            if (nameField) {
+                nameField.focus();
+            }
+        });
+
+        // Handle form submission
+        document.querySelector('.guest-form').addEventListener('submit', function(e) {
+            const submitBtn = document.querySelector('.guest-btn');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>Signing in...';
+            submitBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

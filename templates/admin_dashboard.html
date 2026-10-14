@@ -1,0 +1,3701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedBot Ultra - Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --admin-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            --danger-gradient: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);
+            --dark-bg: #0a0e1a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-logo {
+            width: 48px;
+            height: 48px;
+            background: var(--admin-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .sidebar-title h2 {
+            font-size: 18px;
+            font-weight: 700;
+            background: var(--admin-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sidebar-title p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            border-left: 3px solid #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .nav-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            padding: 24px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, var(--dark-bg) 100%);
+        }
+
+        .header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding: 20px 24px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+        }
+
+        .header-left h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .header-left p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-online {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: var(--danger-gradient);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(253, 121, 168, 0.4);
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--admin-gradient);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .metric-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--glass-bg);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #ff6b6b;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: var(--admin-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-change {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .metric-change.positive {
+            color: #00ff88;
+        }
+
+        .metric-change.negative {
+            color: #ff6b6b;
+        }
+
+        .metric-change.warning {
+            color: #ffa500;
+        }
+
+        .metric-change.neutral {
+            color: #a0aec0;
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            background: var(--admin-gradient);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .action-btn.secondary {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+
+        .action-btn.danger {
+            background: var(--danger-gradient);
+        }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        /* Log Viewer */
+        .log-viewer {
+            background: #1a1a1a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border-left: 3px solid transparent;
+        }
+
+        .log-entry.error {
+            background: rgba(255, 107, 107, 0.1);
+            border-left-color: #ff6b6b;
+            color: #ffaaaa;
+        }
+
+        .log-entry.warning {
+            background: rgba(255, 234, 167, 0.1);
+            border-left-color: #ffeaa7;
+            color: #ffd700;
+        }
+
+        .log-entry.info {
+            background: rgba(116, 185, 255, 0.1);
+            border-left-color: #74b9ff;
+            color: #74b9ff;
+        }
+
+        .log-timestamp {
+            color: var(--text-secondary);
+        }
+
+        /* File Manager */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .file-item {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 107, 107, 0.5);
+        }
+
+        .file-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            color: #ff6b6b;
+        }
+
+        .file-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            word-wrap: break-word;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .file-actions {
+            margin-top: 12px;
+            display: flex;
+        }
+
+        /* Enhanced Medical Book Manager Styles */
+        .book-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            font-size: 32px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .upload-progress {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .upload-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success-gradient);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .upload-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .book-item {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .book-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .book-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .book-status {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .book-status.indexed {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+        }
+
+        .book-status.pending {
+            background: rgba(255, 234, 167, 0.2);
+            color: #ffeaa7;
+        }
+
+        .book-status.error {
+            background: rgba(253, 121, 168, 0.2);
+            color: #fd79a8;
+        }
+
+        .book-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .book-details {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .book-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .book-actions button {
+            flex: 1;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .indexing-controls {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .indexing-controls h4 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .indexing-status {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner i {
+            margin-right: 8px;
+        }
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .file-action {
+            padding: 4px 8px;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-action:hover {
+            background: var(--admin-gradient);
+            color: white;
+        }
+
+        .file-action.danger:hover {
+            background: var(--danger-gradient);
+        }
+
+        /* Terminal */
+        .terminal {
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            color: #00ff00;
+        }
+
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        .terminal-prompt {
+            color: #ff6b6b;
+            margin-right: 8px;
+        }
+
+        .terminal-command {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtext {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="sidebar-title">
+                <h2>Admin Panel</h2>
+                <p>MedBot Ultra v3.0</p>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" data-section="dashboard">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="metrics">
+                        <i class="nav-icon fas fa-chart-bar"></i>
+                        <span>Metrics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="logs">
+                        <i class="nav-icon fas fa-file-alt"></i>
+                        <span>Logs</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="files">
+                        <i class="nav-icon fas fa-folder"></i>
+                        <span>File Manager</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="terminal">
+                        <i class="nav-icon fas fa-terminal"></i>
+                        <span>Terminal</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="system">
+                        <i class="nav-icon fas fa-server"></i>
+                        <span>System Info</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="cache">
+                        <i class="nav-icon fas fa-memory"></i>
+                        <span>Cache Management</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>Admin Dashboard</h1>
+                <p>MedBot Ultra Management Console</p>
+            </div>
+            <div class="header-right">
+                <div class="status-badge status-online">
+                    <i class="fas fa-circle"></i>
+                    <span>System Online</span>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="content-section active">
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Total Requests</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="total-requests">0</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Real-time</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Success Rate</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="success-rate">0%</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Excellent</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Avg Response Time</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-stopwatch"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="avg-response-time">0ms</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>Ultra-fast</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Cache Hit Rate</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-memory"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="cache-hit-rate">0%</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Optimized</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">CPU Usage</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="cpu-usage">0%</div>
+                    <div class="metric-change" id="cpu-change">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Normal</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Memory Usage</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-memory"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="memory-usage">0%</div>
+                    <div class="metric-change" id="memory-change">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Optimal</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Active Sessions</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="active-sessions">0</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Live</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">System Health</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="system-health">HEALTHY</div>
+                    <div class="metric-change positive" id="health-change">
+                        <i class="fas fa-check-circle"></i>
+                        <span>All Systems Go</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">System Uptime</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="system-uptime">0h</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Stable</span>
+                    </div>
+                </div>
+                <!-- Medical Platform Metrics -->
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Total Logins</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="total-logins">0</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Daily</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Total Logouts</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="total-logouts">0</div>
+                    <div class="metric-change neutral">
+                        <i class="fas fa-minus"></i>
+                        <span>Sessions</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Active Users</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="active-users">0</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-heartbeat"></i>
+                        <span>Live</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">CUDA Status</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="cuda-status">GPU Ready</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-check"></i>
+                        <span>Accelerated</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Medical Images</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-x-ray"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="medical-images">0</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-upload"></i>
+                        <span>Processed</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Book Uploads</span>
+                        <div class="metric-icon">
+                            <i class="fas fa-book-medical"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="book-uploads">0</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Success</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-Time User Activity -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">🔴 Live User Activity</h3>
+                    <div class="activity-controls">
+                        <button class="action-btn success" onclick="toggleActivityMonitoring()" id="activity-toggle">
+                            <i class="fas fa-play"></i>
+                            Start Live
+                        </button>
+                        <button class="action-btn" onclick="refreshActivity()">
+                            <i class="fas fa-sync"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="activity-stats">
+                    <div class="activity-stat">
+                        <span class="activity-value" id="current-online">0</span>
+                        <span class="activity-label">Online Now</span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="activity-value" id="recent-logins">0</span>
+                        <span class="activity-label">Last Hour</span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="activity-value" id="session-duration">0m</span>
+                        <span class="activity-label">Avg Session</span>
+                    </div>
+                </div>
+                <div class="activity-viewer" id="live-activity">
+                    <div class="activity-entry info">
+                        <span class="activity-timestamp">[LIVE]</span>
+                        <span class="activity-user">System</span>
+                        <span class="activity-action">Real-time monitoring initialized</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login/Logout Cycle Tracking -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">📊 Login/Logout Cycles</h3>
+                    <button class="action-btn" onclick="refreshCycleData()">
+                        <i class="fas fa-sync"></i>
+                        Refresh
+                    </button>
+                </div>
+                <div class="cycle-analytics">
+                    <div class="cycle-chart-container">
+                        <canvas id="login-cycle-chart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="cycle-stats-grid">
+                        <div class="cycle-stat-card">
+                            <div class="cycle-stat-header">
+                                <i class="fas fa-sign-in-alt"></i>
+                                <span>Today's Logins</span>
+                            </div>
+                            <div class="cycle-stat-value" id="daily-logins">0</div>
+                        </div>
+                        <div class="cycle-stat-card">
+                            <div class="cycle-stat-header">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Today's Logouts</span>
+                            </div>
+                            <div class="cycle-stat-value" id="daily-logouts">0</div>
+                        </div>
+                        <div class="cycle-stat-card">
+                            <div class="cycle-stat-header">
+                                <i class="fas fa-clock"></i>
+                                <span>Peak Hour</span>
+                            </div>
+                            <div class="cycle-stat-value" id="peak-hour">--:--</div>
+                        </div>
+                        <div class="cycle-stat-card">
+                            <div class="cycle-stat-header">
+                                <i class="fas fa-users"></i>
+                                <span>Unique Users</span>
+                            </div>
+                            <div class="cycle-stat-value" id="unique-users">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Section -->
+        <div id="metrics" class="content-section">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">Performance Charts</h3>
+                    <button class="action-btn" onclick="refreshMetrics()">
+                        <i class="fas fa-sync"></i>
+                        Refresh
+                    </button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performance-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">System Resources</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="system-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Section -->
+        <div id="logs" class="content-section">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">System Logs</h3>
+                    <div>
+                        <select id="log-type" onchange="loadLogs()">
+                            <option value="all">All Logs</option>
+                            <option value="error">Error Logs</option>
+                            <option value="info">Info Logs</option>
+                        </select>
+                        <button class="action-btn" onclick="loadLogs()">
+                            <i class="fas fa-sync"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="log-viewer" id="log-content">
+                    <!-- Logs will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Files Section -->
+        <div id="files" class="content-section">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">📚 Medical Book Manager</h3>
+                    <div class="file-actions">
+                        <button class="action-btn" onclick="refreshBooks()">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                        <button class="action-btn primary" onclick="document.getElementById('book-input').click()">
+                            <i class="fas fa-upload"></i>
+                            Upload Medical Book
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Upload Progress Section -->
+                <div id="upload-progress-container" style="display: none;">
+                    <div class="upload-progress">
+                        <div class="upload-info">
+                            <span id="upload-filename">Uploading...</span>
+                            <span id="upload-percent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="upload-details">
+                            <span id="upload-speed">0 MB/s</span>
+                            <span id="upload-time">--:--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Book Statistics -->
+                <div class="book-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">📖</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="total-books">0</div>
+                            <div class="stat-label">Total Books</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="indexed-books">0</div>
+                            <div class="stat-label">Indexed</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="total-chunks">0</div>
+                            <div class="stat-label">Total Chunks</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔄</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="processing-status">Ready</div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upload Area -->
+                <div class="upload-area" onclick="document.getElementById('book-input').click()">
+                    <div class="upload-icon">
+                        <i class="fas fa-book-medical"></i>
+                    </div>
+                    <div class="upload-text">📚 Upload Medical Books (PDF only)</div>
+                    <div class="upload-subtext">Drag & drop PDF files or click to browse • Max 500MB per file</div>
+                    <input type="file" id="book-input" style="display: none;" accept=".pdf" multiple onchange="uploadBooks(this)">
+                </div>
+
+                <!-- Book Grid -->
+                <div class="book-grid" id="book-grid">
+                    <div class="loading-spinner" id="books-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Loading medical books...
+                    </div>
+                </div>
+
+                <!-- Indexing Controls -->
+                <div class="indexing-controls">
+                    <h4>🔬 Indexing Operations</h4>
+                    <div class="control-buttons">
+                        <button class="action-btn success" onclick="startIndexing()">
+                            <i class="fas fa-play"></i>
+                            Start Indexing
+                        </button>
+                        <button class="action-btn warning" onclick="stopIndexing()">
+                            <i class="fas fa-stop"></i>
+                            Stop Indexing
+                        </button>
+                        <button class="action-btn danger" onclick="clearIndex()">
+                            <i class="fas fa-trash"></i>
+                            Clear Index
+                        </button>
+                    </div>
+                    <div class="indexing-status" id="indexing-status">
+                        <div class="status-text">Ready to index medical books</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Section -->
+        <div id="terminal" class="content-section">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">Terminal</h3>
+                    <button class="action-btn" onclick="clearTerminal()">
+                        <i class="fas fa-trash"></i>
+                        Clear
+                    </button>
+                </div>
+                <div class="terminal" id="terminal-output">
+                    <div>MedBot Ultra Admin Terminal v3.0</div>
+                    <div>Type 'help' for available commands</div>
+                    <div></div>
+                </div>
+                <div class="terminal-input">
+                    <span class="terminal-prompt">admin@medbot:~$</span>
+                    <input type="text" class="terminal-command" id="terminal-input" placeholder="Enter command..." onkeypress="handleTerminalInput(event)">
+                </div>
+            </div>
+        </div>
+
+        <!-- System Info Section -->
+        <div id="system" class="content-section">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">System Information</h3>
+                    <button class="action-btn" onclick="loadSystemInfo()">
+                        <i class="fas fa-sync"></i>
+                        Refresh
+                    </button>
+                </div>
+                <div id="system-info-content">
+                    <!-- System info will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Cache Management Section -->
+        <div id="cache" class="content-section">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">Cache Management</h3>
+                    <button class="action-btn danger" onclick="clearCache()">
+                        <i class="fas fa-trash"></i>
+                        Clear All Cache
+                    </button>
+                </div>
+                <div id="cache-info">
+                    <!-- Cache info will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="upload-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('upload-modal')">&times;</button>
+            <h3 class="modal-title">Upload Medical Document</h3>
+            <div class="upload-area" onclick="document.getElementById('modal-file-input').click()">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">Click to select file</div>
+                <div class="upload-subtext">PDF, TXT, DOC, DOCX (Max 100MB)</div>
+                <input type="file" id="modal-file-input" style="display: none;" accept=".pdf,.txt,.doc,.docx" onchange="uploadFile(this)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let charts = {};
+        let metricsInterval;
+        let lastMetrics = {};
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            setupNavigation();
+            startMetricsUpdates();
+            loadFiles();
+        });
+
+        // Navigation
+        function setupNavigation() {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.dataset.section;
+                    showSection(section);
+                    
+                    // Update active nav item
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Load section-specific data
+            switch(sectionId) {
+                case 'metrics':
+                    initializeCharts();
+                    break;
+                case 'logs':
+                    loadLogs();
+                    break;
+                case 'files':
+                    loadFiles();
+                    break;
+                case 'system':
+                    loadSystemInfo();
+                    break;
+                case 'cache':
+                    loadCacheInfo();
+                    break;
+            }
+        }
+
+        // Metrics and Dashboard
+        function initializeDashboard() {
+            loadMetrics();
+        }
+
+        function startMetricsUpdates() {
+            // Update metrics every 5 seconds
+            metricsInterval = setInterval(loadMetrics, 5000);
+        }
+
+        async function loadMetrics() {
+            try {
+                const response = await fetch('/admin/api/metrics');
+                const data = await response.json();
+                
+                updateMetricsDisplay(data);
+                lastMetrics = data;
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+                showError('Failed to load metrics');
+            }
+        }
+
+        function updateMetricsDisplay(data) {
+            // Update metric cards with proper null checking
+            if (document.getElementById('total-requests')) {
+                document.getElementById('total-requests').textContent = (data.performance.total_requests || 0).toLocaleString();
+            }
+            if (document.getElementById('success-rate')) {
+                document.getElementById('success-rate').textContent = (data.performance.success_rate || 0).toFixed(1) + '%';
+            }
+            if (document.getElementById('avg-response-time')) {
+                document.getElementById('avg-response-time').textContent = ((data.performance.average_response_time || 0) * 1000).toFixed(0) + 'ms';
+            }
+            if (document.getElementById('cache-hit-rate')) {
+                document.getElementById('cache-hit-rate').textContent = (data.performance.cache_hit_rate || 0).toFixed(1) + '%';
+            }
+            if (document.getElementById('active-sessions')) {
+                document.getElementById('active-sessions').textContent = (data.performance.active_sessions || data.users?.currently_active || 0).toLocaleString();
+            }
+            if (document.getElementById('system-uptime')) {
+                document.getElementById('system-uptime').textContent = formatUptime(data.performance.uptime_seconds || 0);
+            }
+            
+            // Update new production metrics
+            if (document.getElementById('cpu-usage')) {
+                const cpuUsage = data.system_metrics?.cpu_usage || 0;
+                document.getElementById('cpu-usage').textContent = cpuUsage.toFixed(1) + '%';
+                
+                // Update CPU change indicator based on usage level
+                const cpuChange = document.getElementById('cpu-change');
+                if (cpuChange) {
+                    if (cpuUsage > 80) {
+                        cpuChange.className = 'metric-change negative';
+                        cpuChange.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>High</span>';
+                    } else if (cpuUsage > 50) {
+                        cpuChange.className = 'metric-change warning';
+                        cpuChange.innerHTML = '<i class="fas fa-arrow-up"></i><span>Moderate</span>';
+                    } else {
+                        cpuChange.className = 'metric-change positive';
+                        cpuChange.innerHTML = '<i class="fas fa-check"></i><span>Normal</span>';
+                    }
+                }
+            }
+            
+            if (document.getElementById('memory-usage')) {
+                const memoryUsage = data.system_metrics?.memory_usage || 0;
+                document.getElementById('memory-usage').textContent = memoryUsage.toFixed(1) + '%';
+                
+                // Update memory change indicator
+                const memoryChange = document.getElementById('memory-change');
+                if (memoryChange) {
+                    if (memoryUsage > 85) {
+                        memoryChange.className = 'metric-change negative';
+                        memoryChange.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>High</span>';
+                    } else if (memoryUsage > 70) {
+                        memoryChange.className = 'metric-change warning';
+                        memoryChange.innerHTML = '<i class="fas fa-arrow-up"></i><span>Elevated</span>';
+                    } else {
+                        memoryChange.className = 'metric-change positive';
+                        memoryChange.innerHTML = '<i class="fas fa-check"></i><span>Optimal</span>';
+                    }
+                }
+            }
+            
+            if (document.getElementById('system-health')) {
+                const healthStatus = data.health_status || 'UNKNOWN';
+                const healthScore = data.health_score || 0;
+                document.getElementById('system-health').textContent = healthStatus;
+                
+                // Update health status indicator
+                const healthChange = document.getElementById('health-change');
+                if (healthChange) {
+                    if (healthStatus === 'HEALTHY') {
+                        healthChange.className = 'metric-change positive';
+                        healthChange.innerHTML = '<i class="fas fa-check-circle"></i><span>All Systems Go</span>';
+                    } else if (healthStatus === 'WARNING') {
+                        healthChange.className = 'metric-change warning';
+                        healthChange.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Needs Attention</span>';
+                    } else if (healthStatus === 'CRITICAL') {
+                        healthChange.className = 'metric-change negative';
+                        healthChange.innerHTML = '<i class="fas fa-exclamation-circle"></i><span>Critical Issues</span>';
+                    } else {
+                        healthChange.className = 'metric-change neutral';
+                        healthChange.innerHTML = '<i class="fas fa-question-circle"></i><span>Unknown</span>';
+                    }
+                }
+            }
+            
+            // Update charts if data exists
+            if (data.charts_data) {
+                updateCharts(data.charts_data);
+            }
+        }
+
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${minutes}m`;
+        }
+
+        function refreshDashboard() {
+            loadMetrics();
+            showSuccess('Dashboard refreshed');
+        }
+
+        // Enhanced Charts with Real Data
+        function initializeCharts() {
+            try {
+                if (charts.performance) {
+                    charts.performance.destroy();
+                }
+                if (charts.system) {
+                    charts.system.destroy();
+                }
+
+                const performanceCtx = document.getElementById('performance-chart')?.getContext('2d');
+                if (performanceCtx) {
+                    charts.performance = new Chart(performanceCtx, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [{
+                                label: 'Requests/hour',
+                                data: [],
+                                borderColor: '#ff6b6b',
+                                backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }, {
+                                label: 'Response Time (ms)',
+                                data: [],
+                                borderColor: '#74b9ff',
+                                backgroundColor: 'rgba(116, 185, 255, 0.1)',
+                                tension: 0.4,
+                                yAxisID: 'y1'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#ffffff',
+                                        usePointStyle: true
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#ffffff',
+                                    borderColor: '#ff6b6b',
+                                    borderWidth: 1
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { 
+                                        color: '#a0aec0',
+                                        maxTicksLimit: 12
+                                    },
+                                    grid: { 
+                                        color: 'rgba(255, 255, 255, 0.1)',
+                                        display: true
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { 
+                                        color: '#a0aec0',
+                                        callback: function(value) {
+                                            return value.toLocaleString();
+                                        }
+                                    },
+                                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    beginAtZero: true,
+                                    ticks: { 
+                                        color: '#a0aec0',
+                                        callback: function(value) {
+                                            return value + 'ms';
+                                        }
+                                    },
+                                    grid: { drawOnChartArea: false }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                const systemCtx = document.getElementById('system-chart')?.getContext('2d');
+                if (systemCtx) {
+                    charts.system = new Chart(systemCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['CPU Usage', 'Memory Usage', 'Disk Usage'],
+                            datasets: [{
+                                data: [0, 0, 0],
+                                backgroundColor: ['#ff6b6b', '#74b9ff', '#00ff88'],
+                                borderColor: ['#ff4757', '#5352ed', '#2ed573'],
+                                borderWidth: 2,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '60%',
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        color: '#ffffff',
+                                        padding: 20,
+                                        usePointStyle: true
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#ffffff',
+                                    borderColor: '#ff6b6b',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return context.label + ': ' + context.parsed + '%';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                console.log('📊 Charts initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing charts:', error);
+                showError('Failed to initialize charts');
+            }
+        }
+        
+        function updateCharts(chartsData) {
+            try {
+                // Update performance chart
+                if (charts.performance && chartsData.hourly_requests) {
+                    const hourlyData = chartsData.hourly_requests;
+                    const labels = Object.keys(hourlyData).sort();
+                    const requestData = labels.map(hour => hourlyData[hour] || 0);
+                    const responseTimeData = chartsData.response_times || [];
+                    
+                    charts.performance.data.labels = labels;
+                    charts.performance.data.datasets[0].data = requestData;
+                    if (responseTimeData.length > 0) {
+                        // Show average response time for each hour (simplified)
+                        const avgResponseTimes = labels.map(() => 
+                            responseTimeData.reduce((a, b) => a + b, 0) / responseTimeData.length * 1000
+                        );
+                        charts.performance.data.datasets[1].data = avgResponseTimes;
+                    }
+                    charts.performance.update('active');
+                }
+                
+                // Update system chart
+                if (charts.system && chartsData.system_resources) {
+                    const resources = chartsData.system_resources;
+                    charts.system.data.datasets[0].data = [
+                        Math.round(resources.cpu || 0),
+                        Math.round(resources.memory || 0),
+                        Math.round(resources.disk || 0)
+                    ];
+                    charts.system.update('active');
+                }
+                
+                console.log('📈 Charts updated with new data');
+            } catch (error) {
+                console.error('❌ Error updating charts:', error);
+            }
+        }
+
+        function refreshMetrics() {
+            loadMetrics();
+            showSuccess('Metrics refreshed');
+        }
+
+        // Logs
+        async function loadLogs() {
+            try {
+                const logType = document.getElementById('log-type').value;
+                const response = await fetch(`/admin/api/logs?type=${logType}&lines=100`);
+                const data = await response.json();
+                
+                const logContent = document.getElementById('log-content');
+                logContent.innerHTML = '';
+                
+                data.logs.forEach(log => {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = `log-entry ${log.level.toLowerCase()}`;
+                    logEntry.innerHTML = `
+                        <span class="log-timestamp">[${log.timestamp}]</span>
+                        <span>[${log.level}]</span>
+                        <span>${log.message}</span>
+                    `;
+                    logContent.appendChild(logEntry);
+                });
+                
+                // Auto-scroll to bottom
+                logContent.scrollTop = logContent.scrollHeight;
+                
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                showError('Failed to load logs');
+            }
+        }
+
+        // Enhanced Files Management with Medical Book Support
+        let fileManagerData = {};
+
+        async function loadFiles() {
+            try {
+                const response = await fetch('/admin/api/files');
+                const data = await response.json();
+                fileManagerData = data;
+                
+                const fileGrid = document.getElementById('file-grid');
+                fileGrid.innerHTML = '';
+                
+                // Add summary section
+                const summaryDiv = createFileManagerSummary(data.summary);
+                fileGrid.appendChild(summaryDiv);
+                
+                // Add category tabs
+                const tabsDiv = createCategoryTabs();
+                fileGrid.appendChild(tabsDiv);
+                
+                // Show medical books by default
+                displayFilesByCategory('medical_books');
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showError('Failed to load files');
+            }
+        }
+
+        function createFileManagerSummary(summary) {
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'file-manager-summary';
+            summaryDiv.style.cssText = `
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 16px;
+                margin-bottom: 20px;
+                padding: 16px;
+                background: var(--card-bg);
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+            `;
+            
+            summaryDiv.innerHTML = `
+                <div class="summary-stat">
+                    <div style="font-size: 24px; font-weight: bold; color: #ff6b6b;">${summary.medical_books_count}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Medical Books</div>
+                </div>
+                <div class="summary-stat">
+                    <div style="font-size: 24px; font-weight: bold; color: #74b9ff;">${summary.indexed_books}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Indexed</div>
+                </div>
+                <div class="summary-stat">
+                    <div style="font-size: 24px; font-weight: bold; color: #ffd700;">${summary.pending_books}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Pending</div>
+                </div>
+                <div class="summary-stat">
+                    <div style="font-size: 24px; font-weight: bold; color: #00ff88;">${summary.total_size_mb}MB</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Total Size</div>
+                </div>
+            `;
+            
+            return summaryDiv;
+        }
+
+        function createCategoryTabs() {
+            const tabsDiv = document.createElement('div');
+            tabsDiv.className = 'category-tabs';
+            tabsDiv.style.cssText = `
+                display: flex;
+                gap: 8px;
+                margin-bottom: 20px;
+                padding: 4px;
+                background: var(--card-bg);
+                border-radius: 8px;
+                border: 1px solid var(--border-color);
+            `;
+            
+            const tabs = [
+                { id: 'medical_books', label: '📚 Medical Books', count: fileManagerData.medical_books?.length || 0 },
+                { id: 'general_files', label: '📄 General Files', count: fileManagerData.uploads_directory?.length || 0 },
+                { id: 'all_files', label: '🗂️ All Files', count: (fileManagerData.medical_books?.length || 0) + (fileManagerData.uploads_directory?.length || 0) }
+            ];
+            
+            tabs.forEach(tab => {
+                const tabButton = document.createElement('button');
+                tabButton.className = `category-tab ${tab.id === 'medical_books' ? 'active' : ''}`;
+                tabButton.style.cssText = `
+                    flex: 1;
+                    padding: 8px 12px;
+                    background: ${tab.id === 'medical_books' ? 'var(--admin-gradient)' : 'transparent'};
+                    color: ${tab.id === 'medical_books' ? 'white' : 'var(--text-secondary)'};
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                `;
+                
+                tabButton.innerHTML = `${tab.label} (${tab.count})`;
+                tabButton.onclick = () => switchFileCategory(tab.id, tabButton);
+                
+                tabsDiv.appendChild(tabButton);
+            });
+            
+            return tabsDiv;
+        }
+
+        function switchFileCategory(categoryId, clickedButton) {
+            // Update active tab
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.style.background = 'transparent';
+                tab.style.color = 'var(--text-secondary)';
+                tab.classList.remove('active');
+            });
+            
+            clickedButton.style.background = 'var(--admin-gradient)';
+            clickedButton.style.color = 'white';
+            clickedButton.classList.add('active');
+            
+            // Display files for selected category
+            displayFilesByCategory(categoryId);
+        }
+
+        function displayFilesByCategory(categoryId) {
+            const fileGrid = document.getElementById('file-grid');
+            const existingFiles = fileGrid.querySelectorAll('.file-item:not(.file-manager-summary):not(.category-tabs)');
+            existingFiles.forEach(item => item.remove());
+            
+            let filesToShow = [];
+            
+            switch(categoryId) {
+                case 'medical_books':
+                    filesToShow = fileManagerData.medical_books || [];
+                    filesToShow.forEach(file => {
+                        const fileItem = createMedicalBookItem(file);
+                        fileGrid.appendChild(fileItem);
+                    });
+                    break;
+                case 'general_files':
+                    filesToShow = fileManagerData.uploads_directory || [];
+                    filesToShow.forEach(file => {
+                        const fileItem = createFileItem(file, 'uploads');
+                        fileGrid.appendChild(fileItem);
+                    });
+                    break;
+                case 'all_files':
+                    const medicalBooks = fileManagerData.medical_books || [];
+                    const generalFiles = fileManagerData.uploads_directory || [];
+                    
+                    medicalBooks.forEach(file => {
+                        const fileItem = createMedicalBookItem(file);
+                        fileGrid.appendChild(fileItem);
+                    });
+                    
+                    generalFiles.forEach(file => {
+                        const fileItem = createFileItem(file, 'uploads');
+                        fileGrid.appendChild(fileItem);
+                    });
+                    break;
+            }
+        }
+
+        function createMedicalBookItem(file) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item medical-book-item';
+            fileItem.style.border = '1px solid rgba(255, 107, 107, 0.3)';
+            
+            const statusColor = getStatusColor(file.indexing_status);
+            const categoryIcon = getCategoryIcon(file.medical_category);
+            
+            fileItem.innerHTML = `
+                <div class="file-icon" style="position: relative;">
+                    <i class="fas fa-file-pdf" style="color: #ff6b6b;"></i>
+                    <div style="position: absolute; top: -2px; right: -2px; background: ${statusColor}; 
+                                width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--dark-bg);"></div>
+                </div>
+                <div class="file-name" title="${file.name}">${file.name}</div>
+                <div class="file-meta">
+                    <div class="file-size">${file.size_mb.toFixed(2)} MB</div>
+                    <div class="file-category" style="font-size: 10px; color: var(--text-secondary);">
+                        ${categoryIcon} ${file.medical_category?.replace('_', ' ') || 'General'}
+                    </div>
+                    <div class="file-status" style="font-size: 10px; color: ${statusColor};">
+                        ${formatIndexingStatus(file.indexing_status)}
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="file-action" onclick="viewMedicalBookDetails('${file.name}')" title="View Details">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                    <button class="file-action" onclick="triggerIndexing('${file.name}')" title="Index Book"
+                            ${file.indexing_status === 'indexed' ? 'disabled' : ''}>
+                        <i class="fas fa-cogs"></i>
+                    </button>
+                    <button class="file-action" onclick="downloadFile('${file.name}', 'data')" title="Download">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="file-action danger" onclick="deleteFile('${file.name}', 'data')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            return fileItem;
+        }
+
+        function createFileItem(file, directory) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            
+            const iconClass = getFileIcon(file.type);
+            
+            fileItem.innerHTML = `
+                <div class="file-icon">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="file-name" title="${file.name}">${file.name}</div>
+                <div class="file-size">${file.size_mb.toFixed(2)} MB</div>
+                <div class="file-actions">
+                    <button class="file-action" onclick="downloadFile('${file.name}', '${directory}')">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="file-action danger" onclick="deleteFile('${file.name}', '${directory}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            return fileItem;
+        }
+
+        function getFileIcon(fileType) {
+            switch(fileType.toLowerCase()) {
+                case '.pdf': return 'fas fa-file-pdf';
+                case '.txt': return 'fas fa-file-alt';
+                case '.doc':
+                case '.docx': return 'fas fa-file-word';
+                default: return 'fas fa-file';
+            }
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'indexed': return '#00ff88';
+                case 'pending_indexing': return '#ffd700';
+                case 'indexing': return '#74b9ff';
+                case 'failed': return '#ff6b6b';
+                default: return '#a0aec0';
+            }
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'anatomy': '🦴',
+                'physiology': '❤️',
+                'pathology': '🔬',
+                'pharmacology': '💊',
+                'internal_medicine': '🩺',
+                'emergency_medicine': '🚨',
+                'general_medicine': '📚'
+            };
+            return icons[category] || '📖';
+        }
+
+        function formatIndexingStatus(status) {
+            switch(status) {
+                case 'indexed': return '✅ Indexed';
+                case 'pending_indexing': return '⏳ Pending';
+                case 'indexing': return '⚡ Processing';
+                case 'failed': return '❌ Failed';
+                case 'not_tracked': return '❓ Unknown';
+                default: return status || 'Unknown';
+            }
+        }
+
+        async function triggerIndexing(filename) {
+            try {
+                showLoading(`Triggering indexing for ${filename}...`);
+                
+                const response = await fetch('/admin/api/indexing/trigger', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: filename
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess(`Indexing started for ${filename}`);
+                    loadFiles(); // Refresh file list
+                } else {
+                    showError(result.error || 'Failed to start indexing');
+                }
+                
+            } catch (error) {
+                console.error('Error triggering indexing:', error);
+                showError('Failed to trigger indexing');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function viewMedicalBookDetails(filename) {
+            try {
+                // Get book details and indexing logs
+                const response = await fetch(`/admin/api/indexing/logs/${filename}`);
+                const data = await response.json();
+                
+                // Create details modal
+                showMedicalBookModal(filename, data);
+                
+            } catch (error) {
+                console.error('Error loading book details:', error);
+                showError('Failed to load book details');
+            }
+        }
+
+        function showMedicalBookModal(filename, logData) {
+            const modal = document.createElement('div');
+            modal.className = 'modal show';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+                    <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+                    <h3 class="modal-title">📚 ${filename}</h3>
+                    
+                    <div style="margin: 20px 0;">
+                        <h4 style="color: #ff6b6b; margin-bottom: 10px;">Status</h4>
+                        <p><strong>Indexing Status:</strong> ${formatIndexingStatus(logData.status)}</p>
+                        ${logData.start_time ? `<p><strong>Started:</strong> ${new Date(logData.start_time).toLocaleString()}</p>` : ''}
+                        <p><strong>Has Active Process:</strong> ${logData.has_active_process ? '✅ Yes' : '❌ No'}</p>
+                    </div>
+                    
+                    <div style="margin: 20px 0;">
+                        <h4 style="color: #74b9ff; margin-bottom: 10px;">Actions</h4>
+                        <button class="action-btn" onclick="triggerIndexing('${filename}'); this.closest('.modal').remove();">
+                            <i class="fas fa-cogs"></i> Start/Restart Indexing
+                        </button>
+                        <button class="action-btn secondary" onclick="loadFiles(); this.closest('.modal').remove();">
+                            <i class="fas fa-sync"></i> Refresh Status
+                        </button>
+                    </div>
+                    
+                    ${logData.logs && logData.logs.length > 0 ? `
+                        <div style="margin: 20px 0;">
+                            <h4 style="color: #00ff88; margin-bottom: 10px;">Processing Logs</h4>
+                            <div style="background: #1a1a1a; border: 1px solid var(--border-color); border-radius: 8px; 
+                                        padding: 16px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                                ${logData.logs.map(log => `<div style="margin-bottom: 4px; color: #00ff00;">${log}</div>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        async function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                showLoading(`Uploading ${file.name}...`);
+                
+                const response = await fetch('/admin/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = `✅ ${result.filename} uploaded successfully (${result.size_mb}MB)`;
+                    
+                    // Show additional info for medical books
+                    if (result.book_info && result.book_info.category) {
+                        message += `\n📚 Category: ${result.book_info.category.replace('_', ' ')}`;
+                    }
+                    
+                    if (result.auto_indexing) {
+                        message += `\n🚀 Automatic indexing started`;
+                        
+                        // Start monitoring the indexing process
+                        if (result.indexing_result && result.indexing_result.background_indexing_started) {
+                            setTimeout(() => {
+                                monitorIndexingProgress(result.filename);
+                            }, 2000);
+                        }
+                    }
+                    
+                    showSuccess(message);
+                    loadFiles(); // Refresh file list
+                    closeModal('upload-modal');
+                    
+                    // Clear the input
+                    input.value = '';
+                } else {
+                    showError(result.error || 'Upload failed');
+                }
+                
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                showError('Failed to upload file: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function monitorIndexingProgress(filename) {
+            try {
+                const response = await fetch(`/admin/api/indexing/logs/${filename}`);
+                const data = await response.json();
+                
+                if (data.has_active_process && data.status === 'indexing') {
+                    // Show a non-intrusive progress indicator
+                    const progressDiv = document.createElement('div');
+                    progressDiv.id = `indexing-progress-${filename}`;
+                    progressDiv.style.cssText = `
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        background: var(--card-bg);
+                        border: 1px solid var(--border-color);
+                        border-radius: 8px;
+                        padding: 12px 16px;
+                        backdrop-filter: blur(10px);
+                        z-index: 1000;
+                        max-width: 300px;
+                    `;
+                    progressDiv.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <div style="width: 12px; height: 12px; background: #74b9ff; border-radius: 50%; animation: pulse 1.5s infinite;"></div>
+                            <span style="font-weight: bold;">Processing ${filename}</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Indexing medical book...</div>
+                        <button onclick="this.parentElement.remove()" style="
+                            position: absolute; top: 4px; right: 8px; background: none; 
+                            border: none; color: var(--text-secondary); cursor: pointer;
+                        ">×</button>
+                    `;
+                    
+                    document.body.appendChild(progressDiv);
+                    
+                    // Continue monitoring
+                    setTimeout(() => {
+                        checkIndexingComplete(filename, progressDiv);
+                    }, 5000);
+                }
+                
+            } catch (error) {
+                console.error('Error monitoring indexing:', error);
+            }
+        }
+        
+        async function checkIndexingComplete(filename, progressDiv) {
+            try {
+                const response = await fetch(`/admin/api/indexing/logs/${filename}`);
+                const data = await response.json();
+                
+                if (data.status === 'completed') {
+                    // Show completion message
+                    progressDiv.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <div style="width: 12px; height: 12px; background: #00ff88; border-radius: 50%;"></div>
+                            <span style="font-weight: bold;">✅ ${filename} Indexed</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Ready for medical queries!</div>
+                        <button onclick="this.parentElement.remove()" style="
+                            position: absolute; top: 4px; right: 8px; background: none; 
+                            border: none; color: var(--text-secondary); cursor: pointer;
+                        ">×</button>
+                    `;
+                    
+                    // Auto-remove after 5 seconds
+                    setTimeout(() => {
+                        if (progressDiv && progressDiv.parentElement) {
+                            progressDiv.remove();
+                        }
+                    }, 5000);
+                    
+                    // Refresh file list to show updated status
+                    loadFiles();
+                    
+                } else if (data.status === 'failed') {
+                    // Show failure message
+                    progressDiv.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <div style="width: 12px; height: 12px; background: #ff6b6b; border-radius: 50%;"></div>
+                            <span style="font-weight: bold;">❌ Indexing Failed</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">${filename}</div>
+                        <button onclick="triggerIndexing('${filename}'); this.parentElement.remove();" style="
+                            margin-top: 8px; padding: 4px 8px; background: #ff6b6b; color: white;
+                            border: none; border-radius: 4px; cursor: pointer; font-size: 11px;
+                        ">Retry</button>
+                    `;
+                    
+                } else if (data.has_active_process) {
+                    // Continue monitoring
+                    setTimeout(() => {
+                        checkIndexingComplete(filename, progressDiv);
+                    }, 5000);
+                } else {
+                    // Process ended but status unclear, remove progress indicator
+                    progressDiv.remove();
+                }
+                
+            } catch (error) {
+                console.error('Error checking indexing status:', error);
+                if (progressDiv && progressDiv.parentElement) {
+                    progressDiv.remove();
+                }
+            }
+        }
+
+        async function deleteFile(filename, directory) {
+            if (!confirm(`Are you sure you want to delete ${filename}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/api/delete-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: filename,
+                        directory: directory
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess(result.message);
+                    loadFiles();
+                } else {
+                    showError(result.error);
+                }
+                
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                showError('Failed to delete file');
+            }
+        }
+
+        function showUploadModal() {
+            document.getElementById('upload-modal').classList.add('show');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        // Enhanced Terminal with session support and real-time logging
+        let currentSessionId = 'default';
+        let activeProcesses = {};
+        let terminalPollingInterval = null;
+
+        async function handleTerminalInput(event) {
+            if (event.key === 'Enter') {
+                const input = document.getElementById('terminal-input');
+                const command = input.value.trim();
+                
+                if (!command) return;
+                
+                // Add command to terminal output with enhanced prompt
+                const currentDir = getCurrentDirectory();
+                addTerminalOutput(`admin@medbot:${currentDir}$ ${command}`, 'command');
+                
+                // Clear input
+                input.value = '';
+                
+                // Execute command on server
+                await executeTerminalCommand(command);
+            }
+        }
+
+        async function executeTerminalCommand(command) {
+            try {
+                // Show execution indicator
+                const executingLine = addTerminalOutput('⚡ Executing...', 'info');
+                
+                const response = await fetch('/admin/api/terminal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        command: command,
+                        session_id: currentSessionId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // Remove execution indicator
+                if (executingLine && executingLine.parentNode) {
+                    executingLine.parentNode.removeChild(executingLine);
+                }
+                
+                if (result.success) {
+                    // Handle streaming commands
+                    if (result.streaming && result.process_id) {
+                        addTerminalOutput(`🚀 Started process: ${result.process_id}`, 'info');
+                        addTerminalOutput(result.message, 'info');
+                        startProcessMonitoring(result.process_id);
+                        return;
+                    }
+                    
+                    // Handle regular output
+                    if (result.output) {
+                        // Split multi-line output and add each line
+                        const lines = result.output.split('\n');
+                        lines.forEach(line => {
+                            if (line.trim()) {
+                                addTerminalOutput(line);
+                            }
+                        });
+                    }
+                    
+                    // Show execution time if available
+                    if (result.execution_time) {
+                        addTerminalOutput(`⏱️ Completed in ${result.execution_time.toFixed(2)}s`, 'info');
+                    }
+                    
+                    // Update current directory if changed
+                    if (result.current_dir) {
+                        updateCurrentDirectory(result.current_dir);
+                    }
+                    
+                } else {
+                    addTerminalOutput(`❌ Error: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error executing command:', error);
+                addTerminalOutput(`❌ Network Error: ${error.message}`, 'error');
+            }
+        }
+
+        function startProcessMonitoring(processId) {
+            activeProcesses[processId] = {
+                id: processId,
+                startTime: Date.now(),
+                lastOutputCount: 0
+            };
+            
+            // Add process control buttons
+            const controlDiv = document.createElement('div');
+            controlDiv.id = `process-controls-${processId}`;
+            controlDiv.style.cssText = 'margin: 10px 0; padding: 8px; background: rgba(255,107,107,0.1); border-radius: 4px;';
+            controlDiv.innerHTML = `
+                <span style="color: #74b9ff;">Process ${processId} running...</span>
+                <button onclick="killProcess('${processId}')" style="
+                    margin-left: 10px; 
+                    background: #ff6b6b; 
+                    color: white; 
+                    border: none; 
+                    padding: 4px 8px; 
+                    border-radius: 4px; 
+                    cursor: pointer;
+                ">Kill</button>
+            `;
+            document.getElementById('terminal-output').appendChild(controlDiv);
+            
+            // Start polling for output
+            if (terminalPollingInterval) {
+                clearInterval(terminalPollingInterval);
+            }
+            
+            terminalPollingInterval = setInterval(async () => {
+                await updateProcessOutput(processId);
+            }, 1000);
+        }
+
+        async function updateProcessOutput(processId) {
+            try {
+                const response = await fetch(`/admin/api/terminal/stream/${processId}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Process monitoring error:', data.error);
+                    return;
+                }
+                
+                const process = activeProcesses[processId];
+                if (!process) return;
+                
+                // Add new output lines
+                const newLines = data.output_lines.slice(process.lastOutputCount);
+                newLines.forEach(line => {
+                    addTerminalOutput(line, 'process-output');
+                });
+                
+                process.lastOutputCount = data.output_lines.length;
+                
+                // Check if process completed
+                if (data.status === 'completed') {
+                    addTerminalOutput(`✅ Process ${processId} completed (exit code: ${data.exit_code})`, 'success');
+                    addTerminalOutput(`⏱️ Total runtime: ${data.runtime.toFixed(2)}s`, 'info');
+                    
+                    // Remove process controls
+                    const controlDiv = document.getElementById(`process-controls-${processId}`);
+                    if (controlDiv) {
+                        controlDiv.remove();
+                    }
+                    
+                    delete activeProcesses[processId];
+                    
+                    // Stop polling if no more active processes
+                    if (Object.keys(activeProcesses).length === 0 && terminalPollingInterval) {
+                        clearInterval(terminalPollingInterval);
+                        terminalPollingInterval = null;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error updating process output:', error);
+            }
+        }
+
+        async function killProcess(processId) {
+            try {
+                const response = await fetch(`/admin/api/terminal/kill/${processId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addTerminalOutput(`🛑 Process ${processId} killed`, 'warning');
+                    
+                    // Remove process controls
+                    const controlDiv = document.getElementById(`process-controls-${processId}`);
+                    if (controlDiv) {
+                        controlDiv.remove();
+                    }
+                    
+                    delete activeProcesses[processId];
+                } else {
+                    addTerminalOutput(`❌ Failed to kill process: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addTerminalOutput(`❌ Error killing process: ${error.message}`, 'error');
+            }
+        }
+
+        function addTerminalOutput(text, type = 'output') {
+            const terminal = document.getElementById('terminal-output');
+            const line = document.createElement('div');
+            line.style.marginBottom = '2px';
+            line.style.lineHeight = '1.4';
+            
+            // Style based on type
+            switch(type) {
+                case 'error':
+                    line.style.color = '#ff6b6b';
+                    line.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
+                    line.style.padding = '2px 6px';
+                    line.style.borderRadius = '3px';
+                    break;
+                case 'info':
+                    line.style.color = '#74b9ff';
+                    break;
+                case 'warning':
+                    line.style.color = '#ffd700';
+                    break;
+                case 'success':
+                    line.style.color = '#00ff88';
+                    break;
+                case 'command':
+                    line.style.color = '#ffffff';
+                    line.style.fontWeight = 'bold';
+                    break;
+                case 'process-output':
+                    line.style.color = '#a0aec0';
+                    line.style.marginLeft = '16px';
+                    break;
+                default:
+                    line.style.color = '#00ff00';
+            }
+            
+            line.textContent = text;
+            terminal.appendChild(line);
+            
+            // Auto-scroll to bottom
+            terminal.scrollTop = terminal.scrollHeight;
+            
+            return line;
+        }
+
+        function clearTerminal() {
+            // Kill all active processes
+            Object.keys(activeProcesses).forEach(processId => {
+                killProcess(processId);
+            });
+            
+            const terminal = document.getElementById('terminal-output');
+            terminal.innerHTML = `
+                <div style="color: #74b9ff; font-weight: bold;">MedBot Ultra Admin Terminal v3.0 Enhanced</div>
+                <div style="color: #a0aec0;">✨ Features: Real-time output, process monitoring, session management</div>
+                <div style="color: #a0aec0;">Type 'help' for available commands</div>
+                <div></div>
+            `;
+        }
+
+        function getCurrentDirectory() {
+            // This would be updated from server responses
+            return '~';
+        }
+
+        function updateCurrentDirectory(newDir) {
+            // Update the prompt to show current directory
+            const shortDir = newDir.length > 30 ? '...' + newDir.slice(-27) : newDir;
+            // This could be used to update a directory display
+        }
+
+        // Initialize enhanced terminal features
+        function initializeEnhancedTerminal() {
+            // Load session info
+            loadTerminalSessions();
+            
+            // Add terminal shortcuts
+            document.getElementById('terminal-input').addEventListener('keydown', function(event) {
+                if (event.key === 'ArrowUp') {
+                    // Could implement command history here
+                    event.preventDefault();
+                }
+            });
+        }
+
+        async function loadTerminalSessions() {
+            try {
+                const response = await fetch('/admin/api/terminal/sessions');
+                const data = await response.json();
+                
+                if (data.sessions) {
+                    // Could display session info in UI
+                    console.log('Active terminal sessions:', data.sessions);
+                }
+                
+                if (data.active_processes && data.active_processes.length > 0) {
+                    // Resume monitoring any active processes
+                    data.active_processes.forEach(processId => {
+                        startProcessMonitoring(processId);
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error loading terminal sessions:', error);
+            }
+        }
+
+        // Initialize enhanced terminal when dashboard loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initializeEnhancedTerminal, 1000);
+        });
+
+        // System Info
+        async function loadSystemInfo() {
+            try {
+                const response = await fetch('/admin/api/system-info');
+                const data = await response.json();
+                
+                const systemInfoContent = document.getElementById('system-info-content');
+                systemInfoContent.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <div class="info-section">
+                            <h4>Platform Information</h4>
+                            <p><strong>System:</strong> ${data.platform.system}</p>
+                            <p><strong>Release:</strong> ${data.platform.release}</p>
+                            <p><strong>Python:</strong> ${data.platform.python_version}</p>
+                            <p><strong>Architecture:</strong> ${data.platform.machine}</p>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h4>Hardware</h4>
+                            <p><strong>CPU Cores:</strong> ${data.hardware.cpu_count}</p>
+                            <p><strong>Total Memory:</strong> ${data.hardware.memory_total_gb.toFixed(2)} GB</p>
+                            <p><strong>Disk Space:</strong> ${data.hardware.disk_total_gb.toFixed(2)} GB</p>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h4>Process Information</h4>
+                            <p><strong>PID:</strong> ${data.process.pid}</p>
+                            <p><strong>Memory Usage:</strong> ${data.process.memory_mb.toFixed(2)} MB</p>
+                            <p><strong>Threads:</strong> ${data.process.num_threads}</p>
+                            <p><strong>CPU:</strong> ${data.process.cpu_percent.toFixed(1)}%</p>
+                        </div>
+                        
+                        <div class="info-section">
+                            <h4>Configuration</h4>
+                            <p><strong>Debug Mode:</strong> ${data.configuration.debug_mode ? 'Enabled' : 'Disabled'}</p>
+                            <p><strong>Redis:</strong> ${data.configuration.redis_connected ? 'Connected' : 'Disconnected'}</p>
+                            <p><strong>Cache:</strong> ${data.configuration.cache_configured ? 'Configured' : 'Not Configured'}</p>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading system info:', error);
+                showError('Failed to load system information');
+            }
+        }
+
+        // Cache Management
+        async function loadCacheInfo() {
+            try {
+                const response = await fetch('/admin/api/metrics');
+                const data = await response.json();
+                
+                const cacheInfo = document.getElementById('cache-info');
+                cacheInfo.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div class="metric-card">
+                            <h4>Cache Statistics</h4>
+                            <p><strong>Hit Rate:</strong> ${data.performance.cache_hit_rate.toFixed(1)}%</p>
+                            <p><strong>Total Hits:</strong> ${data.performance.cache_hits || 0}</p>
+                            <p><strong>Total Misses:</strong> ${data.performance.cache_misses || 0}</p>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <h4>Redis Status</h4>
+                            <p><strong>Connected:</strong> ${data.application.redis_connected ? 'Yes' : 'No'}</p>
+                            <p><strong>Type:</strong> Redis + Local Fallback</p>
+                            <p><strong>TTL:</strong> 1-24 hours</p>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading cache info:', error);
+                showError('Failed to load cache information');
+            }
+        }
+
+        async function clearCache() {
+            if (!confirm('Are you sure you want to clear all caches? This will temporarily slow down responses.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/api/clear-cache', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('All caches cleared successfully');
+                    loadCacheInfo();
+                } else {
+                    showError(result.error);
+                }
+                
+            } catch (error) {
+                console.error('Error clearing cache:', error);
+                showError('Failed to clear cache');
+            }
+        }
+
+        // Utility functions
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/admin/logout';
+            }
+        }
+
+        function showSuccess(message) {
+            showNotification(message, 'success');
+        }
+
+        function showError(message) {
+            showNotification(message, 'error');
+        }
+
+        function showLoading(message) {
+            // Implementation for loading indicator
+            console.log('Loading:', message);
+        }
+
+        function hideLoading() {
+            // Implementation for hiding loading indicator
+        }
+
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 9999;
+                animation: slideIn 0.3s ease-out;
+                ${type === 'success' ? 'background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);' : ''}
+                ${type === 'error' ? 'background: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);' : ''}
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Add CSS for notification animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            .info-section {
+                background: var(--glass-bg);
+                padding: 20px;
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+            }
+            .info-section h4 {
+                color: #ff6b6b;
+                margin-bottom: 16px;
+                font-size: 16px;
+            }
+            .info-section p {
+                margin-bottom: 8px;
+                color: var(--text-secondary);
+            }
+            .info-section strong {
+                color: var(--text-primary);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Enhanced Medical Book Management Functions
+        
+        // Upload multiple books with progress tracking
+        async function uploadBooks(input) {
+            const files = Array.from(input.files);
+            if (!files.length) return;
+            
+            for (const file of files) {
+                await uploadSingleBook(file);
+            }
+            
+            // Refresh books after all uploads
+            await refreshBooks();
+        }
+        
+        async function uploadSingleBook(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Show upload progress
+            showUploadProgress(file.name, 0);
+            
+            // Validate file size and type for medical books
+            if (file.size > 500 * 1024 * 1024) { // 500MB limit
+                hideUploadProgress();
+                showNotification(`❌ File too large: ${file.name} (Max 500MB)`, 'error');
+                return;
+            }
+            
+            if (!file.type.includes('pdf')) {
+                hideUploadProgress();
+                showNotification(`❌ Only PDF files allowed for medical books`, 'error');
+                return;
+            }
+            
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                // Track upload progress with advanced medical book processing
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        updateUploadProgress(file.name, percentComplete, e.loaded, e.total);
+                    }
+                });
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const result = JSON.parse(xhr.responseText);
+                        if (result.success) {
+                            hideUploadProgress();
+                            showNotification(`🚀 ${file.name} uploaded - Advanced processing started`, 'success');
+                            
+                            // Start monitoring advanced processing
+                            monitorAdvancedBookProcessing(result.book_id, file.name);
+                            
+                            // Update metrics
+                            updateMetric('book-uploads', parseInt(document.getElementById('book-uploads').textContent || '0') + 1);
+                        } else {
+                            hideUploadProgress();
+                            showNotification(`❌ Upload failed: ${result.error}`, 'error');
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    hideUploadProgress();
+                    showNotification(`❌ Upload failed: Network error`, 'error');
+                };
+                
+                xhr.open('POST', '/admin/api/book-upload');  // Use new advanced endpoint
+                xhr.send(formData);
+                
+            } catch (error) {
+                hideUploadProgress();
+                showNotification(`❌ Upload failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Advanced Book Processing Monitoring Functions
+        const activeProcessingBooks = new Map();
+        
+        async function monitorAdvancedBookProcessing(bookId, filename) {
+            const monitoringData = {
+                bookId: bookId,
+                filename: filename,
+                startTime: Date.now(),
+                pollInterval: null,
+                retryCount: 0
+            };
+            
+            activeProcessingBooks.set(bookId, monitoringData);
+            
+            // Start polling for status
+            monitoringData.pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/admin/api/book-status/${bookId}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        updateAdvancedProcessingStatus(bookId, result.status, monitoringData);
+                        
+                        // Stop polling if completed or failed
+                        if (result.status.status === 'completed' || result.status.status === 'failed') {
+                            clearInterval(monitoringData.pollInterval);
+                            activeProcessingBooks.delete(bookId);
+                            
+                            if (result.status.status === 'completed') {
+                                showNotification(`✅ ${filename}: Processing completed successfully`, 'success');
+                                showProcessingResults(result.status);
+                                removeProcessingCard(bookId);
+                            } else {
+                                showNotification(`❌ ${filename}: Processing failed`, 'error');
+                                updateProcessingCardError(bookId, result.status.message);
+                            }
+                            
+                            // Refresh books display
+                            setTimeout(refreshBooks, 2000);
+                        }
+                    } else {
+                        monitoringData.retryCount++;
+                        if (monitoringData.retryCount > 10) {
+                            clearInterval(monitoringData.pollInterval);
+                            activeProcessingBooks.delete(bookId);
+                            showNotification(`❌ ${filename}: Lost connection to processing status`, 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Processing status poll error:', error);
+                    monitoringData.retryCount++;
+                    
+                    if (monitoringData.retryCount > 10) {
+                        clearInterval(monitoringData.pollInterval);
+                        activeProcessingBooks.delete(bookId);
+                        showNotification(`❌ ${filename}: Processing monitoring failed`, 'error');
+                    }
+                }
+            }, 3000); // Poll every 3 seconds to avoid overwhelming the server
+            
+            // Show initial processing card
+            showProcessingStatusCard(bookId, filename);
+        }
+        
+        function updateAdvancedProcessingStatus(bookId, status, monitoringData) {
+            // Update processing status display
+            const statusCard = document.getElementById(`processing-card-${bookId}`);
+            if (statusCard) {
+                const progressBar = statusCard.querySelector('.processing-progress-bar');
+                const progressText = statusCard.querySelector('.processing-progress-text');
+                const stageText = statusCard.querySelector('.processing-stage');
+                const timeElapsed = statusCard.querySelector('.processing-time');
+                const messageElement = statusCard.querySelector('.processing-message');
+                
+                if (progressBar) progressBar.style.width = `${status.progress || 0}%`;
+                if (progressText) progressText.textContent = `${Math.round(status.progress || 0)}%`;
+                if (stageText) stageText.textContent = status.stage || 'processing';
+                if (messageElement) messageElement.textContent = status.message || 'Processing...';
+                
+                if (timeElapsed) {
+                    const elapsed = Math.round((Date.now() - monitoringData.startTime) / 1000);
+                    timeElapsed.textContent = `${elapsed}s`;
+                }
+                
+                // Update metrics if available
+                const metricsElement = statusCard.querySelector('.processing-metrics');
+                if (metricsElement && (status.total_chunks > 0 || status.total_pages > 0)) {
+                    metricsElement.innerHTML = `
+                        <span>📄 ${status.total_pages || 0} pages</span>
+                        <span>📝 ${status.indexed_chunks || 0}/${status.total_chunks || 0} chunks</span>
+                        <span>📊 ${Math.round(status.success_rate || 0)}% success</span>
+                    `;
+                }
+            }
+            
+            // Update global dashboard metrics
+            if (status.stage === 'indexing' && status.indexed_chunks > 0) {
+                updateMetric('medical-images', status.indexed_chunks);
+                updateMetric('cuda-status', `Processing ${Math.round(status.progress || 0)}%`);
+            }
+        }
+        
+        function showProcessingStatusCard(bookId, filename) {
+            // Check if processing container exists, if not create it
+            let statusContainer = document.getElementById('active-processing-container');
+            if (!statusContainer) {
+                statusContainer = document.createElement('div');
+                statusContainer.id = 'active-processing-container';
+                statusContainer.className = 'section-card';
+                statusContainer.style.cssText = `
+                    margin: 20px 0;
+                    background: var(--card-bg);
+                    border-radius: 12px;
+                    padding: 20px;
+                    border: 1px solid var(--border-color);
+                `;
+                
+                const header = document.createElement('div');
+                header.className = 'section-header';
+                header.innerHTML = `
+                    <h3 class="section-title">🔄 Active Book Processing</h3>
+                    <span class="processing-count" style="font-size: 12px; color: var(--text-secondary);">0 active</span>
+                `;
+                statusContainer.appendChild(header);
+                
+                // Insert after upload area
+                const uploadArea = document.querySelector('.upload-area');
+                if (uploadArea && uploadArea.parentNode) {
+                    uploadArea.parentNode.insertBefore(statusContainer, uploadArea.nextSibling);
+                }
+            }
+            
+            // Update active count
+            const countElement = statusContainer.querySelector('.processing-count');
+            if (countElement) {
+                const activeCount = activeProcessingBooks.size + 1;
+                countElement.textContent = `${activeCount} active`;
+            }
+            
+            // Create processing card
+            const card = document.createElement('div');
+            card.id = `processing-card-${bookId}`;
+            card.className = 'processing-status-card';
+            card.style.cssText = `
+                margin: 12px 0;
+                padding: 16px;
+                background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(33, 150, 243, 0.1));
+                border: 1px solid rgba(76, 175, 80, 0.3);
+                border-radius: 8px;
+                font-size: 13px;
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            `;
+            
+            card.innerHTML = `
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1);">
+                    <div class="processing-progress-bar" style="height: 100%; background: linear-gradient(90deg, #4CAF50, #2196F3); width: 0%; transition: width 0.5s ease;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #4CAF50; font-size: 14px; margin-bottom: 4px;">📚 ${filename}</div>
+                        <div class="processing-message" style="color: var(--text-secondary); font-size: 12px;">Starting advanced processing...</div>
+                    </div>
+                    <div style="text-align: right; font-size: 11px; color: var(--text-secondary);">
+                        <div class="processing-progress-text">0%</div>
+                        <div class="processing-time">0s</div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-secondary);">
+                    <div class="processing-stage" style="color: #2196F3; font-weight: 500;">validation</div>
+                    <div class="processing-metrics" style="display: flex; gap: 12px;"></div>
+                </div>
+            `;
+            
+            statusContainer.appendChild(card);
+            
+            // Add subtle animation
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }
+        
+        function removeProcessingCard(bookId) {
+            const card = document.getElementById(`processing-card-${bookId}`);
+            if (card) {
+                // Fade out animation
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-10px)';
+                
+                setTimeout(() => {
+                    card.remove();
+                    
+                    // Update active count
+                    const statusContainer = document.getElementById('active-processing-container');
+                    const countElement = statusContainer?.querySelector('.processing-count');
+                    if (countElement) {
+                        const activeCount = activeProcessingBooks.size;
+                        countElement.textContent = `${activeCount} active`;
+                        
+                        // Hide container if no active processing
+                        if (activeCount === 0) {
+                            statusContainer.style.display = 'none';
+                        }
+                    }
+                }, 300);
+            }
+        }
+        
+        function updateProcessingCardError(bookId, errorMessage) {
+            const card = document.getElementById(`processing-card-${bookId}`);
+            if (card) {
+                card.style.background = 'linear-gradient(135deg, rgba(244, 67, 54, 0.1), rgba(255, 152, 0, 0.1))';
+                card.style.borderColor = 'rgba(244, 67, 54, 0.3)';
+                
+                const messageElement = card.querySelector('.processing-message');
+                if (messageElement) {
+                    messageElement.textContent = errorMessage || 'Processing failed';
+                    messageElement.style.color = '#F44336';
+                }
+                
+                const stageElement = card.querySelector('.processing-stage');
+                if (stageElement) {
+                    stageElement.textContent = 'failed';
+                    stageElement.style.color = '#F44336';
+                }
+            }
+        }
+        
+        function showProcessingResults(status) {
+            if (status.status === 'completed') {
+                // Update metrics with processing results
+                updateMetric('medical-images', parseInt(document.getElementById('medical-images').textContent || '0') + (status.indexed_chunks || 0));
+                updateMetric('cuda-status', 'GPU Ready');
+                updateMetric('processing-status', 'Completed');
+                
+                console.log(`📊 Processing completed for ${status.filename}: ${status.indexed_chunks} chunks indexed`);
+            }
+        }
+        
+        function showUploadProgress(filename, percent) {
+            const container = document.getElementById('upload-progress-container');
+            const filenameEl = document.getElementById('upload-filename');
+            const percentEl = document.getElementById('upload-percent');
+            const progressFill = document.getElementById('progress-fill');
+            
+            container.style.display = 'block';
+            filenameEl.textContent = filename;
+            percentEl.textContent = `${Math.round(percent)}%`;
+            progressFill.style.width = `${percent}%`;
+        }
+        
+        function updateUploadProgress(filename, percent, loaded, total) {
+            const percentEl = document.getElementById('upload-percent');
+            const progressFill = document.getElementById('progress-fill');
+            const speedEl = document.getElementById('upload-speed');
+            const timeEl = document.getElementById('upload-time');
+            
+            percentEl.textContent = `${Math.round(percent)}%`;
+            progressFill.style.width = `${percent}%`;
+            
+            // Calculate speed and time estimates
+            const loadedMB = loaded / (1024 * 1024);
+            const totalMB = total / (1024 * 1024);
+            const speed = loadedMB / ((Date.now() - window.uploadStartTime) / 1000);
+            const remainingTime = (totalMB - loadedMB) / speed;
+            
+            speedEl.textContent = `${speed.toFixed(1)} MB/s`;
+            timeEl.textContent = `${Math.round(remainingTime)}s remaining`;
+        }
+        
+        function hideUploadProgress() {
+            const container = document.getElementById('upload-progress-container');
+            container.style.display = 'none';
+        }
+        
+        // Refresh books display
+        async function refreshBooks() {
+            const bookGrid = document.getElementById('book-grid');
+            const loadingSpinner = document.getElementById('books-loading');
+            
+            loadingSpinner.style.display = 'block';
+            bookGrid.innerHTML = '<div class="loading-spinner" id="books-loading"><i class="fas fa-spinner fa-spin"></i>Loading medical books...</div>';
+            
+            try {
+                const response = await fetch('/admin/api/books');
+                const data = await response.json();
+                
+                displayBooks(data.books || []);
+                updateBookStats(data.stats || {});
+                
+            } catch (error) {
+                console.error('Error loading books:', error);
+                bookGrid.innerHTML = '<div class="error-message">❌ Failed to load books</div>';
+            }
+        }
+        
+        function displayBooks(books) {
+            const bookGrid = document.getElementById('book-grid');
+            
+            if (!books.length) {
+                bookGrid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-book-medical" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 16px;"></i>
+                        <h3>No Medical Books</h3>
+                        <p>Upload PDF medical books to get started</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            bookGrid.innerHTML = books.map(book => `
+                <div class="book-item">
+                    <div class="book-header">
+                        <i class="fas fa-book-medical"></i>
+                        <span class="book-status ${book.status}">${book.status}</span>
+                    </div>
+                    <div class="book-name">${book.filename}</div>
+                    <div class="book-details">
+                        📊 Size: ${book.size_mb} MB<br>
+                        🕒 ${book.last_modified}<br>
+                        ${book.chunks_count ? `📝 ${book.chunks_count} chunks` : 'Not indexed'}
+                    </div>
+                    <div class="book-actions">
+                        <button onclick="indexBook('${book.filename}')" style="background: var(--success-gradient); color: white;">
+                            <i class="fas fa-cogs"></i> Index
+                        </button>
+                        <button onclick="deleteBook('${book.filename}')" style="background: var(--danger-gradient); color: white;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updateBookStats(stats) {
+            document.getElementById('total-books').textContent = stats.total_books || 0;
+            document.getElementById('indexed-books').textContent = stats.indexed_books || 0;
+            document.getElementById('total-chunks').textContent = stats.total_chunks || 0;
+            document.getElementById('processing-status').textContent = stats.status || 'Ready';
+        }
+        
+        // Indexing operations
+        async function startIndexing() {
+            try {
+                const response = await fetch('/admin/api/index', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('✅ Indexing started successfully', 'success');
+                    updateIndexingStatus('🔄 Indexing in progress...');
+                } else {
+                    showNotification(`❌ Failed to start indexing: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`❌ Error starting indexing: ${error.message}`, 'error');
+            }
+        }
+        
+        async function stopIndexing() {
+            try {
+                const response = await fetch('/admin/api/index/stop', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('⏹️ Indexing stopped', 'info');
+                    updateIndexingStatus('⏹️ Indexing stopped');
+                } else {
+                    showNotification(`❌ Failed to stop indexing: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`❌ Error stopping indexing: ${error.message}`, 'error');
+            }
+        }
+        
+        async function indexBook(filename) {
+            try {
+                const response = await fetch('/admin/api/index', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: filename })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(`✅ Started indexing ${filename}`, 'success');
+                    refreshBooks();
+                } else {
+                    showNotification(`❌ Failed to index ${filename}: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`❌ Error indexing ${filename}: ${error.message}`, 'error');
+            }
+        }
+        
+        async function deleteBook(filename) {
+            if (!confirm(`Are you sure you want to delete "${filename}"? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/api/delete/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(`✅ Deleted ${filename}`, 'success');
+                    refreshBooks();
+                } else {
+                    showNotification(`❌ Failed to delete ${filename}: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`❌ Error deleting ${filename}: ${error.message}`, 'error');
+            }
+        }
+        
+        function updateIndexingStatus(status) {
+            const statusEl = document.querySelector('#indexing-status .status-text');
+            if (statusEl) {
+                statusEl.textContent = status;
+            }
+        }
+        
+        // GPU Processing Functions for Medical Books
+        async function triggerGPUProcessing(filename) {
+            try {
+                // Update CUDA status indicator
+                updateMetric('cuda-status', 'Processing');
+                
+                const response = await fetch('/admin/api/gpu-process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        filename: filename,
+                        processing_type: 'medical_book',
+                        use_cuda: true 
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(`🚀 GPU processing started for ${filename}`, 'info');
+                    
+                    // Start polling for GPU processing status
+                    pollGPUProcessingStatus(filename);
+                } else {
+                    showNotification(`⚠️ GPU processing failed: ${result.error}`, 'warning');
+                    updateMetric('cuda-status', 'GPU Ready');
+                }
+            } catch (error) {
+                showNotification(`❌ GPU processing error: ${error.message}`, 'error');
+                updateMetric('cuda-status', 'GPU Ready');
+            }
+        }
+        
+        async function pollGPUProcessingStatus(filename) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/admin/api/gpu-status/${encodeURIComponent(filename)}`);
+                    const status = await response.json();
+                    
+                    if (status.completed) {
+                        clearInterval(pollInterval);
+                        updateMetric('cuda-status', 'GPU Ready');
+                        
+                        if (status.success) {
+                            showNotification(`✅ GPU processing completed: ${filename}`, 'success');
+                            updateMetric('medical-images', parseInt(document.getElementById('medical-images').textContent || '0') + status.pages_processed);
+                        } else {
+                            showNotification(`❌ GPU processing failed: ${status.error}`, 'error');
+                        }
+                        
+                        // Refresh books display
+                        refreshBooks();
+                    } else {
+                        // Update processing status
+                        const progressPercent = Math.round((status.pages_processed / status.total_pages) * 100);
+                        updateMetric('cuda-status', `Processing ${progressPercent}%`);
+                    }
+                } catch (error) {
+                    clearInterval(pollInterval);
+                    updateMetric('cuda-status', 'GPU Ready');
+                    console.error('GPU status polling error:', error);
+                }
+            }, 2000); // Poll every 2 seconds
+        }
+        
+        // Enhanced indexing with GPU acceleration
+        async function startIndexing() {
+            try {
+                updateIndexingStatus('Initializing GPU-accelerated indexing...');
+                
+                const response = await fetch('/admin/api/index', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        mode: 'ultra',
+                        use_cuda: true,
+                        enable_medical_processing: true
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(`✅ Started GPU-accelerated indexing for ${result.books_count} books`, 'success');
+                    updateIndexingStatus(`Processing ${result.books_count} books with CUDA acceleration`);
+                    
+                    // Start polling indexing progress
+                    pollIndexingProgress();
+                } else {
+                    showNotification(`❌ Failed to start indexing: ${result.error}`, 'error');
+                    updateIndexingStatus('Ready to index medical books');
+                }
+            } catch (error) {
+                showNotification(`❌ Indexing error: ${error.message}`, 'error');
+                updateIndexingStatus('Ready to index medical books');
+            }
+        }
+        
+        async function pollIndexingProgress() {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/admin/api/status');
+                    const status = await response.json();
+                    
+                    if (!status.is_indexing) {
+                        clearInterval(pollInterval);
+                        updateIndexingStatus('Ready to index medical books');
+                        showNotification('✅ Indexing completed successfully', 'success');
+                        refreshBooks();
+                    } else {
+                        const progressText = `${status.current_operation} - ${Math.round(status.progress_percent)}% complete`;
+                        updateIndexingStatus(progressText);
+                        
+                        // Update processing status metric
+                        updateMetric('processing-status', `${Math.round(status.progress_percent)}%`);
+                    }
+                } catch (error) {
+                    clearInterval(pollInterval);
+                    console.error('Indexing status polling error:', error);
+                }
+            }, 1000); // Poll every second during indexing
+        }
+        
+        // Real-Time User Activity Monitoring
+        let activityMonitoringActive = false;
+        let activityInterval = null;
+        let loginCycleChart = null;
+        
+        async function toggleActivityMonitoring() {
+            const toggle = document.getElementById('activity-toggle');
+            
+            if (activityMonitoringActive) {
+                // Stop monitoring
+                activityMonitoringActive = false;
+                if (activityInterval) clearInterval(activityInterval);
+                
+                toggle.innerHTML = '<i class="fas fa-play"></i> Start Live';
+                toggle.className = 'action-btn success';
+                
+                showNotification('🔴 Real-time monitoring stopped', 'info');
+            } else {
+                // Start monitoring
+                activityMonitoringActive = true;
+                
+                toggle.innerHTML = '<i class="fas fa-stop"></i> Stop Live';
+                toggle.className = 'action-btn danger';
+                
+                // Start polling for activity
+                activityInterval = setInterval(fetchLiveActivity, 2000);
+                fetchLiveActivity(); // Initial fetch
+                
+                showNotification('🟢 Real-time monitoring started', 'success');
+            }
+        }
+        
+        async function fetchLiveActivity() {
+            if (!activityMonitoringActive) return;
+            
+            try {
+                const response = await fetch('/admin/api/live-activity');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateActivityDisplay(data.activity);
+                    updateActivityStats(data.stats);
+                }
+            } catch (error) {
+                console.error('Live activity fetch error:', error);
+            }
+        }
+        
+        function updateActivityDisplay(activities) {
+            const viewer = document.getElementById('live-activity');
+            
+            // Clear old entries (keep last 20)
+            const entries = viewer.querySelectorAll('.activity-entry');
+            if (entries.length > 20) {
+                for (let i = 0; i < entries.length - 20; i++) {
+                    entries[i].remove();
+                }
+            }
+            
+            // Add new activities
+            activities.forEach(activity => {
+                const entry = document.createElement('div');
+                entry.className = `activity-entry ${activity.type}`;
+                entry.innerHTML = `
+                    <span class="activity-timestamp">[${activity.timestamp}]</span>
+                    <span class="activity-user">${activity.user || 'Anonymous'}</span>
+                    <span class="activity-action">${activity.action}</span>
+                `;
+                
+                // Insert at top
+                viewer.insertBefore(entry, viewer.firstChild);
+            });
+        }
+        
+        function updateActivityStats(stats) {
+            document.getElementById('current-online').textContent = stats.online_now || 0;
+            document.getElementById('recent-logins').textContent = stats.recent_logins || 0;
+            document.getElementById('session-duration').textContent = stats.avg_session_duration || '0m';
+            
+            // Update main metrics
+            updateMetric('active-users', stats.online_now || 0);
+        }
+        
+        async function refreshActivity() {
+            if (activityMonitoringActive) {
+                await fetchLiveActivity();
+            } else {
+                showNotification('Start live monitoring first', 'warning');
+            }
+        }
+        
+        // Login/Logout Cycle Analytics
+        async function refreshCycleData() {
+            try {
+                const response = await fetch('/admin/api/login-cycles');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateCycleStats(data.stats);
+                    updateCycleChart(data.hourly_data);
+                }
+            } catch (error) {
+                console.error('Cycle data fetch error:', error);
+                showNotification('Failed to load cycle data', 'error');
+            }
+        }
+        
+        function updateCycleStats(stats) {
+            document.getElementById('daily-logins').textContent = stats.daily_logins || 0;
+            document.getElementById('daily-logouts').textContent = stats.daily_logouts || 0;
+            document.getElementById('peak-hour').textContent = stats.peak_hour || '--:--';
+            document.getElementById('unique-users').textContent = stats.unique_users || 0;
+            
+            // Update main dashboard metrics
+            updateMetric('total-logins', stats.daily_logins || 0);
+            updateMetric('total-logouts', stats.daily_logouts || 0);
+        }
+        
+        function updateCycleChart(hourlyData) {
+            const canvas = document.getElementById('login-cycle-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // Destroy existing chart
+            if (loginCycleChart) {
+                loginCycleChart.destroy();
+            }
+            
+            // Create new chart
+            loginCycleChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hourlyData.map(d => d.hour),
+                    datasets: [{
+                        label: 'Logins',
+                        data: hourlyData.map(d => d.logins),
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Logouts',
+                        data: hourlyData.map(d => d.logouts),
+                        borderColor: '#f44336',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '24-Hour Login/Logout Cycles'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Enhanced metrics update function
+        function updateMetric(metricId, value) {
+            const element = document.getElementById(metricId);
+            if (element) {
+                element.textContent = value;
+                
+                // Add animation effect
+                element.style.animation = 'none';
+                element.offsetHeight; // Trigger reflow
+                element.style.animation = 'pulse 0.5s ease-in-out';
+            }
+        }
+
+        // Initialize book manager when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set upload start time for progress calculation
+            window.uploadStartTime = Date.now();
+            
+            // Load books immediately
+            refreshBooks();
+            
+            // Refresh books every 30 seconds
+            setInterval(refreshBooks, 30000);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (metricsInterval) {
+                clearInterval(metricsInterval);
+            }
+        });
+    </script>
+</body>
+</html>

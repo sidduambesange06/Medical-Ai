@@ -1,0 +1,253 @@
+# Ultra-Optimized MedBot Production Deployment
+# Complete production stack with Redis, monitoring, and load balancing
+version: '3.8'
+
+services:
+  # Redis Cache & Session Store
+  redis:
+    image: redis:7.2-alpine
+    container_name: medbot-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    networks:
+      - medbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    sysctls:
+      - net.core.somaxconn=1024
+
+  # Main Application
+  medbot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: medbot-app
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      # Production Environment Variables
+      - FLASK_ENV=production
+      - FLASK_DEBUG=False
+      - REDIS_URL=redis://redis:6379/0
+      
+      # API Keys (Set in .env file)
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      
+      # Security Configuration
+      - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      
+      # Performance Configuration
+      - MAX_WORKERS=8
+      - BATCH_SIZE=100
+      - EMBEDDING_BATCH_SIZE=64
+      - CACHE_DEFAULT_TIMEOUT=3600
+      
+      # Monitoring
+      - ENABLE_METRICS=true
+      - SENTRY_DSN=${SENTRY_DSN}
+      
+      # Database
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///medbot_production.db}
+      
+      # File Storage
+      - UPLOAD_FOLDER=/app/uploads
+      - MAX_CONTENT_LENGTH=104857600  # 100MB
+      
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    ports:
+      - "8080:8080"
+    networks:
+      - medbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # Nginx Load Balancer & Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: medbot-nginx
+    restart: unless-stopped
+    depends_on:
+      - medbot-app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./static:/var/www/static:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - medbot-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: medbot-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - medbot-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: medbot-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - medbot-network
+
+  # Redis Exporter for Monitoring
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: medbot-redis-exporter
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - medbot-network
+
+  # Log Aggregation with Fluent Bit
+  fluent-bit:
+    image: fluent/fluent-bit:2.2.0
+    container_name: medbot-fluent-bit
+    restart: unless-stopped
+    volumes:
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - /var/log:/var/log:ro
+      - ./logs:/app/logs:ro
+    networks:
+      - medbot-network
+    depends_on:
+      - medbot-app
+
+  # Backup Service
+  backup:
+    image: alpine:3.18
+    container_name: medbot-backup
+    restart: "no"
+    volumes:
+      - ./data:/backup/data:ro
+      - ./uploads:/backup/uploads:ro
+      - redis_data:/backup/redis:ro
+      - ./backups:/backups
+    networks:
+      - medbot-network
+    command: |
+      sh -c "
+        apk add --no-cache tar gzip aws-cli &&
+        tar -czf /backups/medbot-backup-$(date +%Y%m%d-%H%M%S).tar.gz /backup &&
+        find /backups -name '*.tar.gz' -mtime +7 -delete
+      "
+
+  # Health Check Service
+  healthcheck:
+    image: curlimages/curl:8.4.0
+    container_name: medbot-healthcheck
+    restart: unless-stopped
+    depends_on:
+      - medbot-app
+      - redis
+      - nginx
+    networks:
+      - medbot-network
+    command: |
+      sh -c "
+        while true; do
+          echo 'Health check starting...'
+          curl -f http://medbot-app:8080/health || echo 'App health check failed'
+          curl -f http://nginx/health || echo 'Nginx health check failed'
+          echo 'Health check completed'
+          sleep 60
+        done
+      "
+
+networks:
+  medbot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+# Production deployment notes:
+# 1. Set all environment variables in .env file
+# 2. Configure SSL certificates in ./ssl directory
+# 3. Customize nginx.conf for your domain
+# 4. Set up proper firewall rules
+# 5. Configure log rotation
+# 6. Set up automated backups
+# 7. Monitor resource usage and scale as needed

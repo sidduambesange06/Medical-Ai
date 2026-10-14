@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAI Pro - Patient Profile</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --medical-primary: #2563eb;
+            --medical-secondary: #3b82f6;
+            --medical-success: #10b981;
+            --medical-error: #ef4444;
+            --medical-warning: #f59e0b;
+            
+            --glass-white: rgba(255, 255, 255, 0.95);
+            --glass-light: rgba(255, 255, 255, 0.85);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border-light: rgba(148, 163, 184, 0.2);
+            --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --gradient-medical: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #0ea5e9 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #cbd5e1 50%, #94a3b8 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--glass-white);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: var(--shadow-medium);
+            overflow: hidden;
+        }
+
+        .profile-header {
+            background: var(--gradient-medical);
+            color: white;
+            padding: 32px;
+            text-align: center;
+            position: relative;
+        }
+
+        .profile-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .profile-header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 36px;
+        }
+
+        .profile-content {
+            padding: 40px;
+        }
+
+        .profile-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            border-bottom: 2px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 12px 12px 0 0;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .tab-button.active {
+            background: var(--medical-primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--medical-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 14px 16px;
+            border: 2px solid var(--border-light);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin: 0;
+            transform: scale(1.2);
+        }
+
+        .tag-input {
+            position: relative;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .tag {
+            background: var(--medical-primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-medical);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-secondary {
+            background: var(--glass-light);
+            color: var(--text-primary);
+            border: 2px solid var(--border-light);
+        }
+
+        .btn-success {
+            background: var(--medical-success);
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 32px;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--medical-success);
+            color: var(--medical-success);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--medical-error);
+            color: var(--medical-error);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-light);
+            border-top: 4px solid var(--medical-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: rgba(37, 99, 235, 0.05);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--medical-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .action-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            border: 2px solid var(--border-light);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .action-card:hover {
+            border-color: var(--medical-primary);
+            transform: translateY(-2px);
+        }
+
+        .action-icon {
+            font-size: 32px;
+            color: var(--medical-primary);
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .profile-content {
+                padding: 24px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="user-avatar">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <h1>Patient Profile</h1>
+            <p>Manage your medical information for personalized healthcare assistance</p>
+        </div>
+
+        <div class="profile-content">
+            <!-- Alert Messages -->
+            <div class="alert alert-success" id="successAlert">
+                <i class="fas fa-check-circle"></i>
+                <span id="successMessage">Profile updated successfully!</span>
+            </div>
+            <div class="alert alert-error" id="errorAlert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="errorMessage">Please fix the errors below.</span>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <p>Loading your profile...</p>
+            </div>
+
+            <!-- Profile Stats -->
+            <div class="profile-stats" id="profileStats" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-number" id="profileCompletion">0%</div>
+                    <div class="stat-label">Profile Complete</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="lastUpdate">Never</div>
+                    <div class="stat-label">Last Updated</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="consultationsCount">0</div>
+                    <div class="stat-label">Consultations</div>
+                </div>
+            </div>
+
+            <!-- Profile Tabs -->
+            <div class="profile-tabs">
+                <button class="tab-button active" onclick="switchTab('basic')">
+                    <i class="fas fa-user"></i> Basic Info
+                </button>
+                <button class="tab-button" onclick="switchTab('medical')">
+                    <i class="fas fa-heart-pulse"></i> Medical History
+                </button>
+                <button class="tab-button" onclick="switchTab('preferences')">
+                    <i class="fas fa-cog"></i> Preferences
+                </button>
+            </div>
+
+            <!-- Basic Information Tab -->
+            <div class="tab-content active" id="basic">
+                <form id="basicInfoForm">
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-id-card"></i>
+                            Personal Information
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="name">
+                                    <i class="fas fa-user"></i>
+                                    Full Name *
+                                </label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="age">
+                                    <i class="fas fa-calendar"></i>
+                                    Age *
+                                </label>
+                                <input type="number" id="age" name="age" min="1" max="120" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="gender">
+                                    <i class="fas fa-venus-mars"></i>
+                                    Gender *
+                                </label>
+                                <select id="gender" name="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                    <option value="prefer-not-to-say">Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">
+                                    <i class="fas fa-phone"></i>
+                                    Phone Number
+                                </label>
+                                <input type="tel" id="phone" name="phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="emergency_contact">
+                                    <i class="fas fa-phone-square-alt"></i>
+                                    Emergency Contact
+                                </label>
+                                <input type="text" id="emergency_contact" name="emergency_contact" placeholder="Name and phone number">
+                            </div>
+                            <div class="form-group">
+                                <label for="blood_type">
+                                    <i class="fas fa-tint"></i>
+                                    Blood Type
+                                </label>
+                                <select id="blood_type" name="blood_type">
+                                    <option value="">Unknown</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Medical History Tab -->
+            <div class="tab-content" id="medical">
+                <form id="medicalHistoryForm">
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-clipboard-list"></i>
+                            Medical Conditions
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="medical_conditions_input">
+                                    <i class="fas fa-disease"></i>
+                                    Medical Conditions
+                                </label>
+                                <input type="text" id="medical_conditions_input" placeholder="Type condition and press Enter">
+                                <div class="tags-container" id="medical_conditions_tags"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="medications_input">
+                                    <i class="fas fa-pills"></i>
+                                    Current Medications
+                                </label>
+                                <input type="text" id="medications_input" placeholder="Type medication and press Enter">
+                                <div class="tags-container" id="medications_tags"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="allergies_input">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Allergies
+                                </label>
+                                <input type="text" id="allergies_input" placeholder="Type allergy and press Enter">
+                                <div class="tags-container" id="allergies_tags"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-family"></i>
+                            Family History
+                        </h3>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="family_diabetes" name="family_history" value="diabetes">
+                                <label for="family_diabetes">Diabetes</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="family_heart" name="family_history" value="heart_disease">
+                                <label for="family_heart">Heart Disease</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="family_cancer" name="family_history" value="cancer">
+                                <label for="family_cancer">Cancer</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="family_hypertension" name="family_history" value="hypertension">
+                                <label for="family_hypertension">Hypertension</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="family_stroke" name="family_history" value="stroke">
+                                <label for="family_stroke">Stroke</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="family_mental" name="family_history" value="mental_health">
+                                <label for="family_mental">Mental Health</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-notes-medical"></i>
+                            Additional Information
+                        </h3>
+                        <div class="form-group">
+                            <label for="medical_notes">
+                                <i class="fas fa-file-medical"></i>
+                                Medical Notes
+                            </label>
+                            <textarea id="medical_notes" name="medical_notes" placeholder="Any additional medical information you'd like to share..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Preferences Tab -->
+            <div class="tab-content" id="preferences">
+                <form id="preferencesForm">
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-user-cog"></i>
+                            Communication Preferences
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="preferred_language">
+                                    <i class="fas fa-language"></i>
+                                    Preferred Language
+                                </label>
+                                <select id="preferred_language" name="preferred_language">
+                                    <option value="en">English</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="fr">French</option>
+                                    <option value="de">German</option>
+                                    <option value="it">Italian</option>
+                                    <option value="pt">Portuguese</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="consultation_style">
+                                    <i class="fas fa-stethoscope"></i>
+                                    Consultation Style
+                                </label>
+                                <select id="consultation_style" name="consultation_style">
+                                    <option value="detailed">Detailed explanations</option>
+                                    <option value="concise">Concise responses</option>
+                                    <option value="empathetic">Empathetic approach</option>
+                                    <option value="technical">Technical/medical terminology</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="follow_up_reminders" name="preferences" value="follow_up_reminders">
+                                <label for="follow_up_reminders">Follow-up reminders</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="medication_reminders" name="preferences" value="medication_reminders">
+                                <label for="medication_reminders">Medication reminders</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="health_tips" name="preferences" value="health_tips">
+                                <label for="health_tips">Health tips and insights</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" onclick="loadProfile()">
+                    <i class="fas fa-sync-alt"></i> Reload Profile
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveProfile()">
+                    <i class="fas fa-save"></i> Save Profile
+                </button>
+                <button type="button" class="btn btn-success" onclick="goToChat()">
+                    <i class="fas fa-comments"></i> Start Consultation
+                </button>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="action-card" onclick="window.location.href='/chat'">
+                    <div class="action-icon"><i class="fas fa-robot"></i></div>
+                    <h4>AI Consultation</h4>
+                    <p>Start a medical consultation</p>
+                </div>
+                <div class="action-card" onclick="exportData()">
+                    <div class="action-icon"><i class="fas fa-download"></i></div>
+                    <h4>Export Data</h4>
+                    <p>Download your medical records</p>
+                </div>
+                <div class="action-card" onclick="window.location.href='/admin/dashboard'" style="display: none;" id="adminAccess">
+                    <div class="action-icon"><i class="fas fa-chart-line"></i></div>
+                    <h4>Admin Dashboard</h4>
+                    <p>Access admin features</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://vyzzvdimsuaeknpmyggt.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5enp2ZGltc3VhZWtucG15Z2d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NzM5NzQsImV4cCI6MjA2OTM0OTk3NH0.BPnPM0fdomDXm1qVwzPlvlW4sW-WazLByAF0X8m1u94';
+        const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+        // Profile Data Storage
+        let currentProfile = {};
+        let medicalConditions = [];
+        let medications = [];
+        let allergies = [];
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏥 Profile page initialized');
+            loadProfile();
+            setupTagInputs();
+        });
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Setup tag inputs for medical data
+        function setupTagInputs() {
+            setupTagInput('medical_conditions_input', 'medical_conditions_tags', medicalConditions);
+            setupTagInput('medications_input', 'medications_tags', medications);
+            setupTagInput('allergies_input', 'allergies_tags', allergies);
+        }
+
+        function setupTagInput(inputId, containerId, dataArray) {
+            const input = document.getElementById(inputId);
+            const container = document.getElementById(containerId);
+
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && input.value.trim()) {
+                    e.preventDefault();
+                    const value = input.value.trim();
+                    if (!dataArray.includes(value)) {
+                        dataArray.push(value);
+                        renderTags(containerId, dataArray);
+                        input.value = '';
+                    }
+                }
+            });
+        }
+
+        function renderTags(containerId, dataArray) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = dataArray.map(item => `
+                <div class="tag">
+                    ${item}
+                    <span class="tag-remove" onclick="removeTag('${containerId}', '${item}')">&times;</span>
+                </div>
+            `).join('');
+        }
+
+        function removeTag(containerId, item) {
+            if (containerId.includes('medical_conditions')) {
+                const index = medicalConditions.indexOf(item);
+                if (index > -1) medicalConditions.splice(index, 1);
+                renderTags(containerId, medicalConditions);
+            } else if (containerId.includes('medications')) {
+                const index = medications.indexOf(item);
+                if (index > -1) medications.splice(index, 1);
+                renderTags(containerId, medications);
+            } else if (containerId.includes('allergies')) {
+                const index = allergies.indexOf(item);
+                if (index > -1) allergies.splice(index, 1);
+                renderTags(containerId, allergies);
+            }
+        }
+
+        // Load user profile
+        async function loadProfile() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/patient/profile', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentProfile = data;
+                    populateForm(data);
+                    updateProfileStats(data);
+                    showAlert('Profile loaded successfully!', 'success');
+                } else {
+                    console.log('No existing profile found - creating new profile');
+                    showProfileStats();
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showAlert('Failed to load profile. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Populate form with profile data
+        function populateForm(data) {
+            // Basic information
+            Object.keys(data).forEach(key => {
+                const element = document.getElementById(key);
+                if (element && data[key]) {
+                    element.value = data[key];
+                }
+            });
+
+            // Medical arrays
+            if (data.medical_conditions) {
+                medicalConditions = Array.isArray(data.medical_conditions) ? data.medical_conditions : [];
+                renderTags('medical_conditions_tags', medicalConditions);
+            }
+            if (data.medications) {
+                medications = Array.isArray(data.medications) ? data.medications : [];
+                renderTags('medications_tags', medications);
+            }
+            if (data.allergies) {
+                allergies = Array.isArray(data.allergies) ? data.allergies : [];
+                renderTags('allergies_tags', allergies);
+            }
+
+            // Family history checkboxes
+            if (data.family_history) {
+                const familyHistory = Array.isArray(data.family_history) ? data.family_history : [];
+                familyHistory.forEach(condition => {
+                    const checkbox = document.querySelector(`input[value="${condition}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+
+            // Preferences checkboxes
+            if (data.preferences) {
+                const preferences = Array.isArray(data.preferences) ? data.preferences : [];
+                preferences.forEach(pref => {
+                    const checkbox = document.querySelector(`input[value="${pref}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+        }
+
+        // Collect form data
+        function collectFormData() {
+            const formData = {
+                // Basic info
+                name: document.getElementById('name').value.trim(),
+                age: parseInt(document.getElementById('age').value) || null,
+                gender: document.getElementById('gender').value,
+                phone: document.getElementById('phone').value.trim(),
+                emergency_contact: document.getElementById('emergency_contact').value.trim(),
+                blood_type: document.getElementById('blood_type').value,
+
+                // Medical history
+                medical_conditions: medicalConditions,
+                medications: medications,
+                allergies: allergies,
+                medical_notes: document.getElementById('medical_notes').value.trim(),
+
+                // Family history
+                family_history: Array.from(document.querySelectorAll('input[name="family_history"]:checked'))
+                    .map(cb => cb.value),
+
+                // Preferences
+                preferred_language: document.getElementById('preferred_language').value,
+                consultation_style: document.getElementById('consultation_style').value,
+                preferences: Array.from(document.querySelectorAll('input[name="preferences"]:checked'))
+                    .map(cb => cb.value)
+            };
+
+            return formData;
+        }
+
+        // Validate form data
+        function validateForm(data) {
+            const errors = [];
+            
+            if (!data.name) errors.push('Name is required');
+            if (!data.age || data.age < 1 || data.age > 120) errors.push('Valid age is required');
+            if (!data.gender) errors.push('Gender is required');
+            
+            return errors;
+        }
+
+        // Save profile
+        async function saveProfile() {
+            const formData = collectFormData();
+            const validationErrors = validateForm(formData);
+
+            if (validationErrors.length > 0) {
+                showAlert(validationErrors.join(', '), 'error');
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const response = await fetch('/api/patient/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    currentProfile = { ...currentProfile, ...formData };
+                    updateProfileStats(currentProfile);
+                    showAlert('Profile saved successfully!', 'success');
+                    
+                    // Update Supabase if available
+                    await syncToSupabase(formData);
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Failed to save profile', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showAlert('Failed to save profile. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Sync to Supabase
+        async function syncToSupabase(profileData) {
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                
+                if (user) {
+                    const { error } = await supabaseClient
+                        .from('patient_profiles')
+                        .upsert({
+                            email: user.email,
+                            ...profileData,
+                            updated_at: new Date().toISOString()
+                        });
+
+                    if (error) {
+                        console.warn('Supabase sync failed:', error);
+                    } else {
+                        console.log('✅ Profile synced to Supabase');
+                    }
+                }
+            } catch (error) {
+                console.warn('Supabase sync error:', error);
+            }
+        }
+
+        // Update profile stats
+        function updateProfileStats(data) {
+            const completion = calculateCompletion(data);
+            document.getElementById('profileCompletion').textContent = completion + '%';
+            
+            const lastUpdate = data.updated_at || data.created_at;
+            if (lastUpdate) {
+                const date = new Date(lastUpdate).toLocaleDateString();
+                document.getElementById('lastUpdate').textContent = date;
+            }
+
+            // Show stats
+            showProfileStats();
+        }
+
+        function calculateCompletion(data) {
+            const fields = ['name', 'age', 'gender', 'medical_conditions', 'medications', 'allergies'];
+            const completed = fields.filter(field => {
+                if (Array.isArray(data[field])) return data[field].length > 0;
+                return data[field] && data[field].toString().trim() !== '';
+            }).length;
+            
+            return Math.round((completed / fields.length) * 100);
+        }
+
+        // Show/hide elements
+        function showLoading(show) {
+            document.getElementById('loadingState').style.display = show ? 'block' : 'none';
+            document.getElementById('profileStats').style.display = show ? 'none' : 'block';
+        }
+
+        function showProfileStats() {
+            document.getElementById('profileStats').style.display = 'block';
+        }
+
+        function showAlert(message, type) {
+            const alertId = type === 'success' ? 'successAlert' : 'errorAlert';
+            const messageId = type === 'success' ? 'successMessage' : 'errorMessage';
+            
+            document.getElementById(messageId).textContent = message;
+            document.getElementById(alertId).style.display = 'flex';
+            
+            setTimeout(() => {
+                document.getElementById(alertId).style.display = 'none';
+            }, 5000);
+        }
+
+        // Navigation functions
+        function goToChat() {
+            if (!currentProfile.name) {
+                showAlert('Please complete your basic profile information first', 'error');
+                switchTab('basic');
+                return;
+            }
+            window.location.href = '/chat';
+        }
+
+        // Export data function
+        async function exportData() {
+            try {
+                const response = await fetch('/api/user/data-export', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'medical-profile.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    showAlert('Profile data exported successfully!', 'success');
+                } else {
+                    showAlert('Failed to export data', 'error');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                showAlert('Failed to export data', 'error');
+            }
+        }
+
+        // Check if user is admin
+        async function checkAdminAccess() {
+            try {
+                const response = await fetch('/auth/check-session', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.is_admin) {
+                        document.getElementById('adminAccess').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.log('Admin check failed:', error);
+            }
+        }
+
+        // Check admin access on load
+        checkAdminAccess();
+    </script>
+</body>
+</html>
